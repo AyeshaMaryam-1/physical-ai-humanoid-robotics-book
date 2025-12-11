@@ -1,55 +1,81 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+<!--
+Sync Impact Report:
+Version change: 0.0.0 -> 1.0.0 (MAJOR: Initial concrete content from user input)
+Modified principles:
+  - [PRINCIPLE_1_NAME] -> Educational Clarity
+  - [PRINCIPLE_2_NAME] -> Engineering Accuracy
+  - [PRINCIPLE_3_NAME] -> Practical Applicability
+  - [PRINCIPLE_4_NAME] -> Ethical & Safe Operation
+Added sections:
+  - Standards
+  - Structure and Constraints
+  - Success Criteria
+Removed sections:
+  - PRINCIPLE_5_NAME, PRINCIPLE_6_NAME, PRINCIPLE__DESCRIPTION placeholders
+Templates requiring updates:
+  - .specify/templates/plan-template.md: ⚠ pending
+  - .specify/templates/spec-template.md: ⚠ pending
+  - .specify/templates/tasks-template.md: ⚠ pending
+  - .specify/templates/commands/*.md: ⚠ pending
+Follow-up TODOs: None
+-->
+# Spec-Driven Book — Physical AI, Humanoid Robotics, and Vision-Language-Action Systems Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### Educational Clarity
+Concepts must support learners progressing from foundational robotics to advanced embodied AI.
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+### Engineering Accuracy
+All robotics, AI, simulation, and VLA explanations must reflect real, industry-validated practices (ROS 2, Gazebo, Isaac, URDF/SDF).
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+### Practical Applicability
+Every concept must translate into hands-on implementation with reproducible demos.
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+### Ethical & Safe Operation
+Emphasize responsible physical AI, safe interaction, and hardware-aware risk notes.
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+## Standards
 
-### [PRINCIPLE_6_NAME]
+- Content must be original and grounded in authoritative sources.
+- All code examples must be executable, version-accurate, and reproducible on ROS 2, Gazebo, Unity, and NVIDIA Isaac Sim.
+- Robotics models must follow official formats and conventions (URDF/SDF, SLAM pipelines, sensor models).
+- VLA and LLM integrations must reflect current multimodal AI capabilities.
+- Diagrams and architecture flows must be clear, purposeful, and technically accurate.
+- Tone: supportive, technical, instructor-to-student.
 
+## Structure and Constraints
 
-[PRINCIPLE__DESCRIPTION]
+### Structure
+- The book contains **4 modules**, each with **4 chapters** (16 total).
+- Each module begins with a high-level specification.
+- Each chapter includes:
+    - Learning objectives
+    - Core concepts
+    - Step-by-step examples
+    - Architecture diagrams
+    - Runnable code samples
+    - A short exercise
+    - References
+- Technical clarity: inputs, outputs, architecture, and safety notes.
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+### Constraints
+- Chapter length: **1,000–2,500 words**
+- Output format: Markdown/MDX for Docusaurus
+- Must build and deploy cleanly to GitHub Pages
+- Hardware assumptions must remain realistic (Jetson, RealSense, Unitree, or simulated humanoids)
+- No hallucinated tools, APIs, or robot capabilities
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+## Success Criteria
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
-
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+- Students can design, simulate, and operate humanoid robots end-to-end.
+- All examples run successfully in ROS 2, Gazebo, and Isaac environments.
+- Zero plagiarism; all sources verifiable.
+- Docusaurus build and GitHub Pages deployment error-free.
+- Capstone VLA humanoid project is clearly achievable through the book.
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+This constitution supersedes all other project practices. Amendments require a formal documentation process, explicit approval by project stakeholders, and a clear migration plan for any affected systems or guidelines. All pull requests and code reviews must verify compliance with these principles.
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+**Version**: 1.0.0 | **Ratified**: 2025-12-07 | **Last Amended**: 2025-12-07

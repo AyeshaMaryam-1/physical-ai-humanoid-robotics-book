@@ -1,0 +1,438 @@
+---
+sidebar_position: 1
+title: "Simulation Fundamentals in Gazebo"
+---
+
+# Simulation Fundamentals in Gazebo
+
+## Purpose
+This chapter introduces Gazebo simulation fundamentals and demonstrates how to integrate our humanoid robot with Gazebo physics engine. We'll cover the basics of creating simulation environments, spawning robots, and controlling them through ROS 2 interfaces.
+
+## Learning Outcomes
+After completing this chapter, you will be able to:
+- Set up Gazebo simulation with ROS 2 integration
+- Spawn your humanoid robot in Gazebo environment
+- Control robot joints using ROS 2 topics and services
+- Configure physics properties and simulation parameters
+- Integrate Gazebo with ros2_control for realistic robot control
+- Debug and troubleshoot simulation issues
+
+## Prerequisites
+- Completed Module 1 (ROS 2 fundamentals and humanoid URDF)
+- Understanding of ROS 2 concepts and launch files
+- Basic knowledge of physics simulation concepts
+- Working ROS 2 Humble installation with Gazebo Garden/Harmonic
+
+## Inputs
+- Working humanoid URDF model from Module 1
+- ROS 2 Humble with Gazebo integration
+- Basic understanding of robot kinematics
+- Completed robot control packages from Module 1
+
+## Outputs
+- Gazebo simulation environment with humanoid robot
+- Working ros2_control integration in simulation
+- Launch files for simulation with robot control
+- Understanding of simulation-specific robot configurations
+
+## Key Concepts
+- **Gazebo Physics Engine**: Realistic physics simulation with collision detection, dynamics, and contacts
+- **Gazebo ROS2 Control**: Integration layer between ROS 2 controllers and Gazebo physics
+- **Model Spawning**: Process of loading robot models into the simulation environment
+- **Simulation Time**: Real-time vs. simulation time management and synchronization
+- **Sensor Simulation**: Simulated sensors that mirror real-world counterparts
+- **World Files**: Gazebo world definition files with environments, objects, and physics properties
+- **Plugin System**: Extensibility mechanism for custom simulation behaviors
+
+## Chapter Outline
+This chapter builds from basic Gazebo concepts to full integration:
+
+### 1. Gazebo Basics
+- Installing and configuring Gazebo with ROS 2
+- Understanding Gazebo GUI and interfaces
+- Basic world creation and environment setup
+
+### 2. Robot Integration
+- Adapting URDF for Gazebo simulation
+- Adding Gazebo-specific plugins and configurations
+- Setting up collision and visual properties
+
+### 3. ros2_control Integration
+- Configuring ros2_control for Gazebo
+- Joint trajectory controllers in simulation
+- Sensor integration and feedback
+
+### 4. Simulation Control
+- Launching and controlling simulation
+- Real-time vs. simulation time management
+- Debugging and visualization tools
+
+## Hands-On Lab
+### Setting up Gazebo Simulation for Humanoid Robot
+
+1. Create the worlds directory in the humanoid_description package:
+```bash
+mkdir -p ~/robotics_ws/src/humanoid_description/worlds
+```
+
+2. Create an empty world file at `humanoid_description/worlds/empty_world.world`:
+```xml
+<?xml version="1.0" ?>
+<sdf version="1.7">
+  <world name="empty_world">
+    <!-- Include the sun -->
+    <include>
+      <uri>model://sun</uri>
+    </include>
+
+    <!-- Add a ground plane -->
+    <include>
+      <uri>model://ground_plane</uri>
+    </include>
+
+    <!-- Physics engine configuration -->
+    <physics name="1ms" type="ode">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+      <real_time_update_rate>1000.0</real_time_update_rate>
+      <gravity>0 0 -9.8</gravity>
+    </physics>
+
+    <!-- GUI configuration -->
+    <gui fullscreen="0">
+      <camera name="user_camera">
+        <pose>-5.0 0.0 3.0 0.0 0.4 0.0</pose>
+        <view_controller>orbit</view_controller>
+        <projection_type>perspective</projection_type>
+      </camera>
+    </gui>
+  </world>
+</sdf>
+```
+
+3. Update the launch file to include Gazebo integration in `humanoid_description/launch/display_simple_humanoid.launch.py`:
+```python
+from launch import LaunchDescription
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, RegisterEventHandler
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
+from launch_ros.actions import Node
+from launch_ros.substitutions import FindPackageShare
+from ament_index_python.packages import get_package_share_directory
+from launch.event_handlers import OnProcessExit
+from launch.actions import ExecuteProcess
+import os
+
+
+def generate_launch_description():
+    # Get the package share directory
+    pkg_share = get_package_share_directory('humanoid_description')
+
+    # Define the URDF file path
+    default_model_path = os.path.join(pkg_share, 'urdf/simple_humanoid.urdf')
+
+    # Define the world file path
+    default_world_path = os.path.join(pkg_share, 'worlds/empty_world.world')
+
+    # Declare launch arguments
+    model_arg = DeclareLaunchArgument(
+        name='model',
+        default_value=default_model_path,
+        description='Absolute path to robot urdf file'
+    )
+
+    world_arg = DeclareLaunchArgument(
+        name='world',
+        default_value=default_world_path,
+        description='Absolute path to world file'
+    )
+
+    # Start Gazebo server and client
+    gazebo = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource([
+            PathJoinSubstitution([
+                FindPackageShare('gazebo_ros'),
+                'launch',
+                'gazebo.launch.py'
+            ])
+        ]),
+        launch_arguments={
+            'world': LaunchConfiguration('world'),
+            'verbose': 'false',
+        }.items()
+    )
+
+    # Robot State Publisher node
+    robot_state_publisher_node = Node(
+        package='robot_state_publisher',
+        executable='robot_state_publisher',
+        parameters=[{
+            'robot_description': open(default_model_path).read()
+        }]
+    )
+
+    # Spawn the robot in Gazebo
+    spawn_entity_node = Node(
+        package='gazebo_ros',
+        executable='spawn_entity.py',
+        arguments=[
+            '-topic', 'robot_description',
+            '-entity', 'simple_humanoid',
+            '-x', '0.0',
+            '-y', '0.0',
+            '-z', '1.0'
+        ],
+        output='screen'
+    )
+
+    # Joint State Publisher GUI node
+    joint_state_publisher_gui_node = Node(
+        package='joint_state_publisher_gui',
+        executable='joint_state_publisher_gui',
+        name='joint_state_publisher_gui',
+        output='screen'
+    )
+
+    # RViz2 node
+    rviz_node = Node(
+        package='rviz2',
+        executable='rviz2',
+        name='rviz2',
+        output='screen'
+    )
+
+    return LaunchDescription([
+        model_arg,
+        world_arg,
+        gazebo,
+        robot_state_publisher_node,
+        spawn_entity_node,
+        joint_state_publisher_gui_node,
+        rviz_node
+    ])
+```
+
+4. Create a new launch file specifically for Gazebo simulation with ros2_control integration at `humanoid_description/launch/gazebo_simulation.launch.py`:
+```python
+from launch import LaunchDescription
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, RegisterEventHandler
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution, Command
+from launch_ros.actions import Node
+from launch_ros.substitutions import FindPackageShare
+from ament_index_python.packages import get_package_share_directory
+from launch.event_handlers import OnProcessExit
+from launch.actions import ExecuteProcess
+import os
+
+
+def generate_launch_description():
+    # Get the package share directory
+    pkg_share = get_package_share_directory('humanoid_description')
+    default_model_path = os.path.join(pkg_share, 'urdf/simple_humanoid.urdf')
+    default_world_path = os.path.join(pkg_share, 'worlds/empty_world.world')
+
+    # Declare launch arguments
+    model_arg = DeclareLaunchArgument(
+        name='model',
+        default_value=default_model_path,
+        description='Absolute path to robot urdf file'
+    )
+
+    world_arg = DeclareLaunchArgument(
+        name='world',
+        default_value=default_world_path,
+        description='Absolute path to world file'
+    )
+
+    # Start Gazebo server and client
+    gazebo = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource([
+            PathJoinSubstitution([
+                FindPackageShare('gazebo_ros'),
+                'launch',
+                'gazebo.launch.py'
+            ])
+        ]),
+        launch_arguments={
+            'world': LaunchConfiguration('world'),
+            'verbose': 'false',
+        }.items()
+    )
+
+    # Robot State Publisher node
+    robot_state_publisher_node = Node(
+        package='robot_state_publisher',
+        executable='robot_state_publisher',
+        parameters=[{
+            'robot_description': Command(['xacro ', LaunchConfiguration('model')])
+        }]
+    )
+
+    # Spawn the robot in Gazebo with ros2_control plugin
+    spawn_entity_node = Node(
+        package='gazebo_ros',
+        executable='spawn_entity.py',
+        arguments=[
+            '-topic', 'robot_description',
+            '-entity', 'simple_humanoid',
+            '-x', '0.0',
+            '-y', '0.0',
+            '-z', '1.0'
+        ],
+        output='screen'
+    )
+
+    # ros2_control Node
+    ros2_controllers_path = os.path.join(
+        get_package_share_directory('humanoid_description'),
+        'config',
+        'controllers.yaml'
+    )
+
+    # Create controllers.yaml configuration file
+    controllers_config = """
+    controller_manager:
+      ros__parameters:
+        update_rate: 100  # Hz
+
+        joint_state_broadcaster:
+          type: joint_state_broadcaster/JointStateBroadcaster
+
+        joint_trajectory_controller:
+          type: joint_trajectory_controller/JointTrajectoryController
+          joints:
+            - left_shoulder
+            - left_elbow
+            - right_shoulder
+            - right_elbow
+            - left_hip
+            - left_knee
+            - right_hip
+            - right_knee
+    """
+
+    # Write controllers.yaml to the config directory
+    config_dir = os.path.join(get_package_share_directory('humanoid_description'), 'config')
+    os.makedirs(config_dir, exist_ok=True)
+    controllers_file = os.path.join(config_dir, 'controllers.yaml')
+    with open(controllers_file, 'w') as f:
+        f.write(controllers_config)
+
+    # Load the controllers
+    load_joint_state_broadcaster = ExecuteProcess(
+        cmd=['ros2', 'control', 'load_controller', '--set-state', 'start', 'joint_state_broadcaster'],
+        output='screen'
+    )
+
+    load_joint_trajectory_controller = ExecuteProcess(
+        cmd=['ros2', 'control', 'load_controller', '--set-state', 'start', 'joint_trajectory_controller'],
+        output='screen'
+    )
+
+    # RViz2 node
+    rviz_config_file = PathJoinSubstitution(
+        [FindPackageShare('humanoid_description'), 'rviz', 'display.rviz']
+    )
+
+    rviz_node = Node(
+        package='rviz2',
+        executable='rviz2',
+        name='rviz2',
+        output='screen'
+    )
+
+    return LaunchDescription([
+        model_arg,
+        world_arg,
+        gazebo,
+        robot_state_publisher_node,
+        spawn_entity_node,
+        RegisterEventHandler(
+            event_handler=OnProcessExit(
+                target_action=spawn_entity_node,
+                on_exit=[load_joint_state_broadcaster],
+            )
+        ),
+        RegisterEventHandler(
+            event_handler=OnProcessExit(
+                target_action=load_joint_state_broadcaster,
+                on_exit=[load_joint_trajectory_controller],
+            )
+        ),
+        rviz_node
+    ])
+```
+
+5. Update the humanoid_description package CMakeLists.txt to install worlds directory:
+```cmake
+cmake_minimum_required(VERSION 3.8)
+project(humanoid_description)
+
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
+
+# find dependencies
+find_package(ament_cmake REQUIRED)
+find_package(urdf REQUIRED)
+find_package(xacro REQUIRED)
+
+# Install launch files
+install(DIRECTORY launch
+  DESTINATION share/${PROJECT_NAME}
+)
+
+# Install URDF files
+install(DIRECTORY urdf
+  DESTINATION share/${PROJECT_NAME}
+)
+
+# Install worlds files
+install(DIRECTORY worlds
+  DESTINATION share/${PROJECT_NAME}
+)
+
+# Install config files
+install(DIRECTORY config
+  DESTINATION share/${PROJECT_NAME}
+)
+
+# Install rviz files
+install(DIRECTORY rviz
+  DESTINATION share/${PROJECT_NAME}
+)
+
+if(BUILD_TESTING)
+  find_package(ament_lint_auto REQUIRED)
+  ament_lint_auto_find_test_dependencies()
+endif()
+
+ament_package()
+```
+
+6. Build the package:
+```bash
+cd ~/robotics_ws
+colcon build --packages-select humanoid_description
+source install/setup.bash
+```
+
+7. Test the Gazebo simulation:
+```bash
+ros2 launch humanoid_description gazebo_simulation.launch.py
+```
+
+## Safety Notes
+- Always test simulation parameters to ensure stable physics behavior
+- Verify joint limits and safety constraints are properly configured
+- Monitor simulation real-time factor to ensure performance
+- Use proper collision detection settings to avoid interpenetration
+- Implement emergency stop mechanisms in simulation controllers
+
+## Evaluation Criteria
+- Can you successfully launch the humanoid robot in Gazebo?
+- Are the ros2_control interfaces properly connected to the simulated robot?
+- Can you command joint movements and see the robot respond in simulation?
+- Is the simulation running at stable real-time performance?
+- Are joint states properly published from the simulated robot?

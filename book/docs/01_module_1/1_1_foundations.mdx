@@ -1,0 +1,212 @@
+---
+sidebar_position: 1
+title: "Foundations of Physical AI & ROS 2"
+---
+
+# Foundations of Physical AI & ROS 2
+
+## Purpose
+This chapter introduces the fundamental concepts of Physical AI and ROS 2 (Robot Operating System 2), establishing the foundation for developing intelligent robotic systems. It covers the principles of embodied intelligence and how ROS 2 provides the communication infrastructure for robotics applications.
+
+## Learning Outcomes
+After completing this chapter, you will be able to:
+- Define Physical AI and explain its relationship to embodied cognition
+- Understand the architecture and concepts of ROS 2
+- Create and run basic ROS 2 nodes for robot communication
+- Implement publisher-subscriber patterns for robot data exchange
+- Use ROS 2 tools for introspection and debugging
+- Design simple robot control systems using ROS 2
+
+## Prerequisites
+- Basic understanding of programming concepts (Python preferred)
+- Familiarity with command-line interfaces
+- Understanding of the concepts covered in the front matter
+- Basic knowledge of robotics terminology
+
+## Inputs
+- Working ROS 2 installation (Humble Hawksbill or later)
+- Development environment configured per lab setup guide
+- Understanding of Physical AI concepts from the preface
+- Basic Python programming skills
+
+## Outputs
+- Working ROS 2 publisher and subscriber nodes
+- Understanding of ROS 2 communication patterns
+- Basic ROS 2 workspace with custom packages
+- Functional talker-listener example implementation
+
+## Key Concepts
+- **Physical AI**: The integration of artificial intelligence with physical systems, enabling robots to perceive, reason, and act in the real world
+- **Embodied Cognition**: The idea that intelligence emerges from the interaction between an agent and its environment
+- **ROS 2 Architecture**: The distributed computing framework for robotics applications
+- **Nodes**: Independent processes that perform computation in ROS 2
+- **Topics**: Named buses over which nodes exchange messages
+- **Publishers and Subscribers**: The communication pattern for data exchange in ROS 2
+- **Services**: Request-response communication pattern in ROS 2
+- **Actions**: Goal-oriented communication pattern for long-running tasks
+
+## Chapter Outline
+This chapter is structured to build your understanding of ROS 2 from basic concepts to practical implementation:
+
+### 1. Physical AI Foundations
+- Understanding embodied intelligence
+- The role of sensors and actuators in intelligent behavior
+- Sensorimotor contingencies and active inference
+
+### 2. ROS 2 Architecture
+- Nodes, topics, and services
+- The ROS 2 communication model
+- Parameter management and lifecycle nodes
+
+### 3. Practical ROS 2 Implementation
+- Creating ROS 2 packages
+- Implementing publisher-subscriber patterns
+- Using ROS 2 tools for debugging and introspection
+
+## Hands-On Lab
+### Creating Your First ROS 2 Package
+1. Navigate to your ROS 2 workspace:
+```bash
+cd ~/robotics_ws/src
+```
+
+2. Create a new package for the basics example:
+```bash
+ros2 pkg create --build-type ament_python ros_basics
+```
+
+3. Create the talker node in `ros_basics/ros_basics/talker_node.py`:
+```python
+import rclpy
+from rclpy.node import Node
+from std_msgs.msg import String
+
+
+class TalkerNode(Node):
+    def __init__(self):
+        super().__init__('talker')
+        self.publisher = self.create_publisher(String, 'chatter', 10)
+        timer_period = 0.5  # seconds
+        self.timer = self.create_timer(timer_period, self.timer_callback)
+        self.i = 0
+
+    def timer_callback(self):
+        msg = String()
+        msg.data = f'Hello World: {self.i}'
+        self.publisher.publish(msg)
+        self.get_logger().info(f'Publishing: "{msg.data}"')
+        self.i += 1
+
+
+def main(args=None):
+    rclpy.init(args=args)
+    talker = TalkerNode()
+    rclpy.spin(talker)
+    talker.destroy_node()
+    rclpy.shutdown()
+
+
+if __name__ == '__main__':
+    main()
+```
+
+4. Create the listener node in `ros_basics/ros_basics/listener_node.py`:
+```python
+import rclpy
+from rclpy.node import Node
+from std_msgs.msg import String
+
+
+class ListenerNode(Node):
+    def __init__(self):
+        super().__init__('listener')
+        self.subscription = self.create_subscription(
+            String,
+            'chatter',
+            self.listener_callback,
+            10)
+        self.subscription  # prevent unused variable warning
+
+    def listener_callback(self, msg):
+        self.get_logger().info(f'I heard: "{msg.data}"')
+
+
+def main(args=None):
+    rclpy.init(args=args)
+    listener = ListenerNode()
+    rclpy.spin(listener)
+    listener.destroy_node()
+    rclpy.shutdown()
+
+
+if __name__ == '__main__':
+    main()
+```
+
+5. Update the `setup.py` file to make the nodes executable:
+```python
+import os
+from glob import glob
+from setuptools import setup
+from setuptools import find_packages
+
+package_name = 'ros_basics'
+
+setup(
+    name=package_name,
+    version='0.0.0',
+    packages=find_packages(exclude=['test']),
+    data_files=[
+        ('share/ament_index/resource_index/packages',
+            ['resource/' + package_name]),
+        ('share/' + package_name, ['package.xml']),
+    ],
+    install_requires=['setuptools'],
+    zip_safe=True,
+    maintainer='Your Name',
+    maintainer_email='your.email@example.com',
+    description='Basic ROS 2 examples for the Physical AI & Humanoid Robotics book',
+    license='Apache License 2.0',
+    tests_require=['pytest'],
+    entry_points={
+        'console_scripts': [
+            'talker = ros_basics.talker_node:main',
+            'listener = ros_basics.listener_node:main',
+        ],
+    },
+)
+```
+
+6. Build the package:
+```bash
+cd ~/robotics_ws
+colcon build --packages-select ros_basics
+source install/setup.bash
+```
+
+7. Test the nodes in separate terminals:
+Terminal 1:
+```bash
+source ~/robotics_ws/install/setup.bash
+ros2 run ros_basics talker
+```
+
+Terminal 2:
+```bash
+source ~/robotics_ws/install/setup.bash
+ros2 run ros_basics listener
+```
+
+## Safety Notes
+- Always test ROS 2 nodes in simulation before connecting to physical robots
+- Implement appropriate safety checks and limits in your code
+- Use ROS 2's built-in safety features like rate limiting
+- Follow proper shutdown procedures to avoid leaving nodes running
+- Ensure proper error handling in your ROS 2 nodes
+
+## Evaluation Criteria
+- Can you successfully create and run the talker-listener example?
+- Do you understand the publisher-subscriber communication pattern?
+- Can you modify the example to publish different types of data?
+- Are you able to use ROS 2 command-line tools for introspection?
+- Can you identify the key components of a ROS 2 system?

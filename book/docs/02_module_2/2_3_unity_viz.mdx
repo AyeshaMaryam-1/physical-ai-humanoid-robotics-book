@@ -1,0 +1,533 @@
+---
+sidebar_position: 3
+title: "High-Fidelity Visualization (Unity)"
+---
+
+# High-Fidelity Visualization (Unity)
+
+## Purpose
+This chapter introduces Unity as a high-fidelity visualization platform for robotics, demonstrating how to create photorealistic representations of our humanoid robot. We'll explore the Unity-Rosbridge ecosystem for connecting Unity with ROS 2, enabling real-time visualization of robot states and sensor data.
+
+## Learning Outcomes
+After completing this chapter, you will be able to:
+- Set up Unity with ROS 2 integration using rosbridge
+- Import and configure robot models in Unity
+- Create realistic materials, lighting, and environments
+- Implement real-time robot state visualization in Unity
+- Connect Unity to ROS 2 topics for live data streaming
+- Build Unity applications for robot visualization and teleoperation
+
+## Prerequisites
+- Completed Module 1 (ROS 2 fundamentals and humanoid URDF)
+- Completed Chapter 2.1-2.2 (Gazebo simulation and sensors)
+- Basic understanding of Unity 3D development environment
+- Knowledge of ROS 2 message types and topics
+
+## Inputs
+- Completed humanoid robot URDF model with sensors
+- Working ROS 2 environment with sensor data
+- Unity 3D installation (2021.3 LTS or later recommended)
+- Understanding of 3D modeling and visualization concepts
+
+## Outputs
+- Unity project with humanoid robot model
+- Real-time ROS 2 to Unity data bridge
+- Photorealistic robot visualization environment
+- Working teleoperation interface in Unity
+
+## Key Concepts
+- **Unity-Rosbridge**: Connection between Unity and ROS 2 using WebSocket communication
+- **URDF Import**: Converting ROS robot descriptions to Unity 3D models
+- **Real-time Visualization**: Streaming robot states and sensor data to Unity
+- **Material and Lighting**: Creating photorealistic robot appearances
+- **Scene Management**: Organizing complex 3D environments with robots
+- **User Interaction**: Building interfaces for robot teleoperation in Unity
+- **Performance Optimization**: Ensuring smooth visualization of complex models
+
+## Chapter Outline
+This chapter builds Unity visualization capabilities:
+
+### 1. Unity Setup and ROS Integration
+- Installing Unity and required packages
+- Setting up rosbridge for Unity-ROS communication
+- Basic Unity scene creation and robot import
+
+### 2. Robot Model Integration
+- Converting URDF to Unity-compatible format
+- Joint mapping and kinematic chain setup
+- Adding materials and textures to robot model
+
+### 3. Real-time Data Streaming
+- Connecting to ROS 2 topics from Unity
+- Updating robot joints in real-time
+- Visualizing sensor data in Unity
+
+### 4. Advanced Visualization
+- Creating realistic environments
+- Lighting and post-processing effects
+- Building user interfaces for teleoperation
+
+## Hands-On Lab
+### Setting up Unity for Robot Visualization
+
+1. **Unity Project Setup:**
+   - Create a new 3D project in Unity (2021.3 LTS or later)
+   - Install the Unity-Rosbridge package via Package Manager
+   - Import the Unity-Rosbridge Standard Assets
+
+2. **ROS Bridge Setup:**
+   - Install rosbridge in your ROS 2 workspace:
+   ```bash
+   sudo apt install ros-humble-rosbridge-suite
+   ```
+
+   - Launch the rosbridge server:
+   ```bash
+   ros2 launch rosbridge_server rosbridge_websocket_launch.xml
+   ```
+
+3. **Robot Model Import:**
+   Since we can't directly import URDF into Unity, we'll create a simplified representation of our humanoid robot using Unity's GameObject hierarchy.
+
+   Create a Unity script for robot joint control: `Assets/Scripts/RosJointStateSubscriber.cs`
+
+```csharp
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using Ros2UnityEx;
+using std_msgs;
+using sensor_msgs;
+
+public class RosJointStateSubscriber : MonoBehaviour
+{
+    [Header("ROS Connection")]
+    public string rosBridgeServerUrl = "ws://127.0.0.1:9090";
+
+    [Header("Joint Mapping")]
+    public JointMapping[] jointMappings;
+
+    private Ros2UnityComponent ros2Unity;
+    private bool connected = false;
+
+    // Start is called before the first frame update
+    void Start()
+    {
+        InitializeRosConnection();
+    }
+
+    void InitializeRosConnection()
+    {
+        ros2Unity = GetComponent<Ros2UnityComponent>();
+        ros2Unity.InitialiseRosConnection(rosBridgeServerUrl);
+
+        // Create subscription to joint states
+        ros2Unity.CreateSubscription<JointStateMsg>("joint_states",
+            (JointStateMsg msg) => OnJointStatesReceived(msg));
+
+        connected = true;
+        Debug.Log("Connected to ROS Bridge: " + rosBridgeServerUrl);
+    }
+
+    void OnJointStatesReceived(JointStateMsg jointStateMsg)
+    {
+        if (jointStateMsg.name.Count != jointStateMsg.position.Count)
+        {
+            Debug.LogWarning("Joint names and positions count mismatch!");
+            return;
+        }
+
+        // Update each joint based on received positions
+        for (int i = 0; i < jointStateMsg.name.Count; i++)
+        {
+            string jointName = jointStateMsg.name[i];
+            float jointPosition = jointStateMsg.position[i];
+
+            // Find corresponding joint in our mapping
+            foreach (JointMapping mapping in jointMappings)
+            {
+                if (mapping.rosJointName == jointName)
+                {
+                    UpdateJoint(mapping, jointPosition);
+                    break;
+                }
+            }
+        }
+    }
+
+    void UpdateJoint(JointMapping mapping, float position)
+    {
+        if (mapping.jointTransform == null) return;
+
+        // Apply joint position based on joint type
+        switch (mapping.jointType)
+        {
+            case JointType.Revolute:
+            case JointType.Continuous:
+                // For revolute joints, apply rotation
+                Vector3 rotation = Vector3.zero;
+                switch (mapping.rotationAxis)
+                {
+                    case RotationAxis.X:
+                        rotation = new Vector3(position * Mathf.Rad2Deg, 0, 0);
+                        break;
+                    case RotationAxis.Y:
+                        rotation = new Vector3(0, position * Mathf.Rad2Deg, 0);
+                        break;
+                    case RotationAxis.Z:
+                        rotation = new Vector3(0, 0, position * Mathf.Rad2Deg);
+                        break;
+                }
+                mapping.jointTransform.localRotation = Quaternion.Euler(rotation);
+                break;
+
+            case JointType.Prismatic:
+                // For prismatic joints, apply translation
+                Vector3 translation = Vector3.zero;
+                switch (mapping.translationAxis)
+                {
+                    case TranslationAxis.X:
+                        translation = new Vector3(position, 0, 0);
+                        break;
+                    case TranslationAxis.Y:
+                        translation = new Vector3(0, position, 0);
+                        break;
+                    case TranslationAxis.Z:
+                        translation = new Vector3(0, 0, position);
+                        break;
+                }
+                mapping.jointTransform.localPosition = translation;
+                break;
+        }
+    }
+
+    void Update()
+    {
+        if (ros2Unity != null && connected)
+        {
+            ros2Unity.Update();
+        }
+    }
+
+    void OnDestroy()
+    {
+        if (ros2Unity != null)
+        {
+            ros2Unity.Dispose();
+        }
+    }
+}
+
+// Helper enums for joint types
+public enum JointType
+{
+    Revolute,
+    Continuous,
+    Prismatic,
+    Fixed
+}
+
+public enum RotationAxis
+{
+    X,
+    Y,
+    Z
+}
+
+public enum TranslationAxis
+{
+    X,
+    Y,
+    Z
+}
+
+// Helper class to map ROS joints to Unity transforms
+[System.Serializable]
+public class JointMapping
+{
+    [Header("ROS Joint Info")]
+    public string rosJointName;
+    public JointType jointType = JointType.Revolute;
+
+    [Header("Unity Transform")]
+    public Transform jointTransform;
+
+    [Header("Joint Configuration")]
+    public RotationAxis rotationAxis = RotationAxis.Y;
+    public TranslationAxis translationAxis = TranslationAxis.X;
+}
+```
+
+4. **Create a Robot Visualization Manager:**
+   Create a script to manage the entire robot visualization: `Assets/Scripts/RobotVisualizationManager.cs`
+
+```csharp
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using Ros2UnityEx;
+using sensor_msgs;
+using visualization_msgs;
+
+public class RobotVisualizationManager : MonoBehaviour
+{
+    [Header("Robot Configuration")]
+    public GameObject robotModel;
+    public RosJointStateSubscriber jointStateSubscriber;
+
+    [Header("Sensor Visualization")]
+    public GameObject lidarVisualization;
+    public GameObject cameraVisualization;
+    public GameObject imuVisualization;
+
+    [Header("Environment")]
+    public Material robotMaterial;
+    public Material floorMaterial;
+    public Light mainLight;
+
+    private Ros2UnityComponent ros2Unity;
+    private List<GameObject> sensorVisualizations = new List<GameObject>();
+
+    void Start()
+    {
+        SetupRobotModel();
+        SetupEnvironment();
+        SetupSensorVisualizations();
+    }
+
+    void SetupRobotModel()
+    {
+        if (robotModel != null)
+        {
+            // Apply materials to robot parts
+            if (robotMaterial != null)
+            {
+                Renderer[] renderers = robotModel.GetComponentsInChildren<Renderer>();
+                foreach (Renderer renderer in renderers)
+                {
+                    renderer.material = robotMaterial;
+                }
+            }
+
+            // Set up joint mappings for our humanoid robot
+            RosJointStateSubscriber jointSubscriber = jointStateSubscriber.GetComponent<RosJointStateSubscriber>();
+            if (jointSubscriber != null)
+            {
+                SetupJointMappings(jointSubscriber);
+            }
+        }
+    }
+
+    void SetupJointMappings(RosJointStateSubscriber jointSubscriber)
+    {
+        // This is a simplified setup - in a real project, you'd want to
+        // create proper transforms for each joint in your Unity scene
+        List<JointMapping> mappings = new List<JointMapping>();
+
+        // Example mappings for our humanoid joints
+        // Note: You would need to create actual transforms in your Unity scene
+        // for each joint and assign them here
+
+        // Left Arm Joints
+        mappings.Add(new JointMapping {
+            rosJointName = "left_shoulder",
+            jointType = JointType.Revolute,
+            rotationAxis = RotationAxis.Y,
+            jointTransform = FindTransform("LeftShoulder")
+        });
+
+        mappings.Add(new JointMapping {
+            rosJointName = "left_elbow",
+            jointType = JointType.Revolute,
+            rotationAxis = RotationAxis.Y,
+            jointTransform = FindTransform("LeftElbow")
+        });
+
+        // Right Arm Joints
+        mappings.Add(new JointMapping {
+            rosJointName = "right_shoulder",
+            jointType = JointType.Revolute,
+            rotationAxis = RotationAxis.Y,
+            jointTransform = FindTransform("RightShoulder")
+        });
+
+        mappings.Add(new JointMapping {
+            rosJointName = "right_elbow",
+            jointType = JointType.Revolute,
+            rotationAxis = RotationAxis.Y,
+            jointTransform = FindTransform("RightElbow")
+        });
+
+        // Left Leg Joints
+        mappings.Add(new JointMapping {
+            rosJointName = "left_hip",
+            jointType = JointType.Revolute,
+            rotationAxis = RotationAxis.Y,
+            jointTransform = FindTransform("LeftHip")
+        });
+
+        mappings.Add(new JointMapping {
+            rosJointName = "left_knee",
+            jointType = JointType.Revolute,
+            rotationAxis = RotationAxis.Y,
+            jointTransform = FindTransform("LeftKnee")
+        });
+
+        // Right Leg Joints
+        mappings.Add(new JointMapping {
+            rosJointName = "right_hip",
+            jointType = JointType.Revolute,
+            rotationAxis = RotationAxis.Y,
+            jointTransform = FindTransform("RightHip")
+        });
+
+        mappings.Add(new JointMapping {
+            rosJointName = "right_knee",
+            jointType = JointType.Revolute,
+            rotationAxis = RotationAxis.Y,
+            jointTransform = FindTransform("RightKnee")
+        });
+
+        jointSubscriber.jointMappings = mappings.ToArray();
+    }
+
+    Transform FindTransform(string name)
+    {
+        // Helper method to find transforms by name in the robot model
+        if (robotModel != null)
+        {
+            Transform[] allTransforms = robotModel.GetComponentsInChildren<Transform>();
+            foreach (Transform t in allTransforms)
+            {
+                if (t.name == name)
+                {
+                    return t;
+                }
+            }
+        }
+        return null;
+    }
+
+    void SetupEnvironment()
+    {
+        // Create a simple environment
+        GameObject floor = GameObject.CreatePrimitive(PrimitiveType.Plane);
+        floor.name = "Floor";
+        floor.transform.position = new Vector3(0, -0.5f, 0);
+        floor.transform.localScale = new Vector3(5, 1, 5);
+
+        if (floorMaterial != null)
+        {
+            floor.GetComponent<Renderer>().material = floorMaterial;
+        }
+
+        // Add main light
+        if (mainLight == null)
+        {
+            GameObject lightObj = new GameObject("Main Light");
+            Light light = lightObj.AddComponent<Light>();
+            light.type = LightType.Directional;
+            light.color = Color.white;
+            light.intensity = 1f;
+            light.transform.position = new Vector3(0, 10, 0);
+            light.transform.LookAt(Vector3.zero);
+            mainLight = light;
+        }
+    }
+
+    void SetupSensorVisualizations()
+    {
+        // Create visualizations for different sensors
+        CreateLidarVisualization();
+        CreateCameraVisualization();
+    }
+
+    void CreateLidarVisualization()
+    {
+        if (lidarVisualization == null)
+        {
+            GameObject lidarObj = new GameObject("LiDAR_Visualization");
+            // Add visualization components for LiDAR data
+            // This could be a point cloud renderer or visual rays
+            lidarVisualization = lidarObj;
+        }
+    }
+
+    void CreateCameraVisualization()
+    {
+        if (cameraVisualization == null)
+        {
+            GameObject cameraObj = new GameObject("Camera_Visualization");
+            // Add visualization components for camera data
+            // This could be a texture display or AR overlay
+            cameraVisualization = cameraObj;
+        }
+    }
+
+    void Update()
+    {
+        // Continuous updates for sensor visualization
+        UpdateSensorVisualizations();
+    }
+
+    void UpdateSensorVisualizations()
+    {
+        // Update visualizations based on sensor data
+        // This would involve subscribing to sensor topics and updating visuals
+    }
+}
+```
+
+5. **Scene Setup:**
+   - Create a new scene in Unity
+   - Add an empty GameObject called "Robot"
+   - Create child GameObjects for each robot link (base, torso, head, arms, legs)
+   - Create primitive shapes (cylinders, spheres, boxes) to represent each link
+   - Add the `RosJointStateSubscriber` script to the Robot GameObject
+   - Add the `RobotVisualizationManager` script to a manager GameObject
+
+6. **Test the Connection:**
+   - Start the rosbridge server: `ros2 launch rosbridge_server rosbridge_websocket_launch.xml`
+   - Start your Gazebo simulation with the sensor-enabled robot
+   - Build and run the Unity application
+   - The Unity robot model should now follow the movements of the simulated robot in Gazebo
+
+7. **Creating a Simple Unity Package Structure:**
+   In the Unity project directory, you would create the following structure:
+   ```
+   unity_project/
+   ├── Assets/
+   │   ├── Scripts/
+   │   │   ├── RosJointStateSubscriber.cs
+   │   │   └── RobotVisualizationManager.cs
+   │   ├── Materials/
+   │   │   └── RobotMaterial.mat
+   │   ├── Models/
+   │   │   └── [Imported robot models]
+   │   ├── Scenes/
+   │   │   └── RobotVisualization.unity
+   │   └── Prefabs/
+   │       └── HumanoidRobot.prefab
+   ├── Packages/
+   ├── ProjectSettings/
+   └── unity_project.sln
+   ```
+
+8. **Build Configuration:**
+   - Set up Unity build settings for your target platform (Windows, Linux, WebGL, etc.)
+   - Configure Player Settings with appropriate settings for robotics visualization
+   - Create build scripts for easy deployment
+
+## Safety Notes
+- Ensure Unity application has proper error handling for ROS connection failures
+- Implement safety limits for visualized joint positions
+- Test visualization performance to avoid frame rate drops
+- Validate that visualization accurately represents robot state
+- Include emergency stop visualization capabilities
+
+## Evaluation Criteria
+- Can Unity connect to ROS 2 topics and receive joint states?
+- Does the Unity robot model accurately reflect the simulated robot's pose?
+- Are sensor data visualized correctly in Unity?
+- Is the Unity application running at acceptable frame rates?
+- Can the Unity interface be used for robot teleoperation if needed?

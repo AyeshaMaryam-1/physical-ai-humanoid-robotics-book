@@ -1,0 +1,141 @@
+---
+sidebar_position: 4
+title: "Lab Setup Guide (Local + Cloud)"
+---
+
+# Lab Setup Guide (Local + Cloud)
+
+## Purpose
+This chapter provides comprehensive instructions for setting up your development environment for the Physical AI & Humanoid Robotics book, covering both local and cloud-based options. It ensures you have all necessary tools and configurations to complete the hands-on exercises.
+
+## Learning Outcomes
+After completing this chapter, you will be able to:
+- Set up a local development environment with all required tools
+- Configure cloud-based alternatives for resource-intensive tasks
+- Verify that your environment meets all requirements
+- Troubleshoot common setup issues
+- Understand the differences between local and cloud development workflows
+
+## Prerequisites
+- Administrative access to your development machine
+- Stable internet connection for downloads and updates
+- Basic command-line familiarity
+- Understanding of your system's hardware specifications
+
+## Inputs
+- Computer with appropriate specifications
+- Internet connection for software downloads
+- Time for installation and configuration (1-3 hours depending on system)
+- Patience for potential troubleshooting
+
+## Outputs
+- Fully functional local development environment
+- Alternative cloud-based development setup (optional)
+- Verified installation of all required tools
+- Understanding of environment-specific workflows
+
+## Key Concepts
+- **Development Environment**: Complete software stack for Physical AI development
+- **Containerization**: Using Docker for consistent environments across systems
+- **Cloud Computing**: Leveraging cloud resources for simulation and AI workloads
+- **Version Control**: Using Git for managing code and collaboration
+- **Virtual Environments**: Isolating dependencies for different projects
+
+## Chapter Outline
+This setup guide covers multiple approaches to environment configuration:
+
+### Local Setup
+1. Installing ROS 2 (Humble Hawksbill or later)
+2. Setting up simulation environments (Gazebo, Unity, Isaac Sim)
+3. Installing AI frameworks and libraries
+4. Configuring development tools and IDEs
+
+### Cloud Setup
+1. Setting up cloud computing instances
+2. Configuring remote development environments
+3. Using cloud-based simulation platforms
+4. Managing cloud resources and costs
+
+### Verification and Troubleshooting
+1. Testing each component individually
+2. Running sample applications
+3. Common issues and solutions
+4. Performance optimization tips
+
+## Hands-On Lab
+### Local Environment Setup
+
+#### Step 1: System Preparation
+1. Update your operating system to the latest stable version
+2. Ensure you have sufficient disk space (at least 20GB free)
+3. Verify your system meets the minimum hardware requirements
+
+#### Step 2: Install ROS 2
+```bash
+# For Ubuntu 22.04 (recommended)
+# Add ROS 2 repository
+sudo apt update && sudo apt install -y curl gnupg lsb-release
+curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key | sudo gpg --dearmor -o /usr/share/keyrings/ros-archive-keyring.gpg
+
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/ros2.list > /dev/null
+
+sudo apt update
+sudo apt install ros-humble-desktop
+sudo apt install python3-rosdep python3-rosinstall python3-rosinstall-generator python3-build-essential
+sudo rosdep init
+rosdep update
+source /opt/ros/humble/setup.bash
+```
+
+#### Step 3: Install Additional Dependencies
+```bash
+# Install Python dependencies
+pip3 install numpy scipy matplotlib
+
+# Install simulation tools
+sudo apt install gazebo libgazebo-dev
+sudo apt install python3-colcon-common-extensions
+
+# Install Git and version control tools
+sudo apt install git git-lfs
+```
+
+#### Step 4: Set up Development Workspace
+```bash
+# Create ROS 2 workspace
+mkdir -p ~/robotics_ws/src
+cd ~/robotics_ws
+colcon build
+source install/setup.bash
+```
+
+#### Step 5: Install AI Frameworks
+```bash
+# Create Python virtual environment
+python3 -m venv ~/ai_env
+source ~/ai_env/bin/activate
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+pip install transformers openai-whisper
+pip install tensorflow
+```
+
+### Cloud Environment Setup (Alternative)
+1. Create an account with a cloud provider (AWS, GCP, or Azure)
+2. Launch a virtual machine with Ubuntu 22.04 and appropriate GPU support
+3. Follow the same installation steps as above
+4. Set up SSH access for remote development
+5. Configure VS Code or other IDE for remote development
+
+## Safety Notes
+- Always install software from official sources to avoid security risks
+- Keep your development environment updated with security patches
+- Use virtual environments to isolate project dependencies
+- Regularly backup important code and configurations
+- Be mindful of cloud computing costs when using paid resources
+
+## Evaluation Criteria
+- Can you successfully run the ROS 2 installation verification?
+- Are you able to build and run a simple ROS 2 package?
+- Can you launch and interact with a basic Gazebo simulation?
+- Do you have access to AI frameworks and can run basic examples?
+- Is your development environment properly configured for the subsequent chapters?

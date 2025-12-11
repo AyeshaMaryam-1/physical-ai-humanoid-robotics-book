@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>humanoid_nav2_config</name>
+  <version>0.0.0</version>
+  <description>Nav2 configuration for humanoid robot in the Physical AI & Humanoid Robotics book</description>
+  <maintainer email="humanoid-robotics-book@example.com">Humanoid Robotics Book</maintainer>
+  <license>Apache-2.0</license>
+
+  <depend>nav2_bringup</depend>
+  <depend>nav2_map_server</depend>
+  <depend>nav2_planner</depend>
+  <depend>nav2_controller</depend>
+  <depend>nav2_behavior_tree</depend>
+  <depend>nav2_bt_navigator</depend>
+  <depend>nav2_recovery</depend>
+  <depend>nav2_lifecycle_manager</depend>
+  <depend>nav2_util</depend>
+  <depend>slam_toolbox</depend>
+  <depend>robot_state_publisher</depend>
+  <depend>tf2_ros</depend>
+  <depend>geometry_msgs</depend>
+  <depend>nav_msgs</depend>
+
+  <test_depend>ament_copyright</test_depend>
+  <test_depend>ament_flake8</test_depend>
+  <test_depend>ament_pep257</test_depend>
+  <test_depend>python3-pytest</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

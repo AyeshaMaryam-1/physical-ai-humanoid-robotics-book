@@ -1,0 +1,21 @@
+#usda 1.0
+(
+    doc = "Base link of the humanoid robot"
+)
+
+def "base_link"
+{
+    def Capsule "collision"
+    {
+        add xformOp:scale = (0.3, 0.3, 0.3)
+        add xformOp:translate = (0, 0, 0)
+        prepend apiSchemas = ["PhysicsRigidBodyAPI"]
+    }
+
+    def Capsule "visual"
+    {
+        add xformOp:scale = (0.3, 0.3, 0.3)
+        add xformOp:translate = (0, 0, 0)
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    }
+}

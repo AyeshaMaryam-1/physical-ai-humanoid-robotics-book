@@ -1,0 +1,21 @@
+#usda 1.0
+(
+    doc = "Head of the humanoid robot"
+)
+
+def "head"
+{
+    def Sphere "collision"
+    {
+        add xformOp:scale = (0.15, 0.15, 0.15)
+        add xformOp:translate = (0, 0, 0)
+        prepend apiSchemas = ["PhysicsRigidBodyAPI"]
+    }
+
+    def Sphere "visual"
+    {
+        add xformOp:scale = (0.15, 0.15, 0.15)
+        add xformOp:translate = (0, 0, 0)
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    }
+}

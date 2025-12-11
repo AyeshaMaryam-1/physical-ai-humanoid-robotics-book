@@ -1,0 +1,776 @@
+---
+sidebar_position: 2
+title: "Isaac ROS Perception Pipeline"
+---
+
+# Isaac ROS Perception Pipeline
+
+## Purpose
+This chapter builds on the Isaac Sim fundamentals to create a high-performance perception pipeline using Isaac ROS. We'll integrate Isaac Sim's photorealistic sensors with ROS 2 to create realistic perception data, implement object detection algorithms, and demonstrate how to process and visualize sensor data for humanoid robots in complex environments.
+
+## Learning Outcomes
+After completing this chapter, you will be able to:
+- Configure Isaac Sim sensors to publish data to ROS 2 topics
+- Install and use Isaac ROS perception packages (object detection, depth estimation, etc.)
+- Implement GPU-accelerated perception pipelines for humanoid robots
+- Integrate perception results with robot control and navigation
+- Visualize perception outputs in RViz2 and Isaac Sim
+- Optimize perception pipelines for real-time performance
+
+## Prerequisites
+- Completed Module 1 (ROS 2 fundamentals and humanoid URDF)
+- Completed Module 2 (Gazebo & Unity digital twin)
+- Completed Module 3.1 (Isaac Sim essentials)
+- Understanding of computer vision concepts
+- Experience with ROS 2 message types (sensor_msgs, vision_msgs)
+- NVIDIA GPU with CUDA support
+
+## Inputs
+- Isaac Sim project with humanoid robot and sensors
+- Isaac ROS extensions installed
+- ROS 2 environment with perception tools
+- Sample objects/scene for perception testing
+
+## Outputs
+- Isaac Sim scene publishing sensor data to ROS 2
+- ROS 2 perception pipeline with Isaac ROS nodes
+- Object detection and depth estimation results
+- Visualization of perception outputs
+- Performance benchmarks for perception pipeline
+
+## Key Concepts
+- **Isaac ROS Extensions**: GPU-accelerated perception algorithms for ROS 2
+- **Sensor Bridge**: Connecting Isaac Sim sensors to ROS 2 topics
+- **Object Detection**: Using Isaac ROS for real-time object detection
+- **Depth Estimation**: Processing depth camera data with Isaac ROS
+- **Perception Pipeline**: End-to-end processing from sensors to actionable data
+- **Performance Optimization**: Leveraging GPU acceleration for real-time perception
+- **ROS 2 Integration**: Connecting perception results to robot control systems
+
+## Chapter Outline
+This chapter builds Isaac ROS perception capabilities:
+
+### 1. Isaac ROS Setup and Installation
+- Installing Isaac ROS extensions and dependencies
+- Configuring GPU acceleration for perception tasks
+- Setting up development environment
+
+### 2. Isaac Sim to ROS Bridge
+- Configuring Isaac Sim sensors for ROS 2 publishing
+- Setting up camera, LiDAR, and IMU bridges
+- Optimizing data transfer and synchronization
+
+### 3. Isaac ROS Perception Nodes
+- Object detection with Isaac ROS Detection NITROS
+- Depth estimation and stereo processing
+- Point cloud processing and segmentation
+
+### 4. Perception Integration
+- Processing perception outputs for robot control
+- Fusing perception data with other sensors
+- Handling perception uncertainty and failures
+
+## Hands-On Lab
+
+### Setting up Isaac ROS Perception Pipeline
+
+1. **Isaac ROS Installation:**
+   Isaac ROS requires specific installation steps. In a real environment, you would:
+   ```bash
+   # Add NVIDIA package repository
+   sudo apt update
+   sudo apt install -y software-properties-common
+   wget https://repo.download.nvidia.com/jetson-agx-xavier/jetson-agx-xavier-public.key -O - | sudo apt-key add -
+
+   # Install Isaac ROS packages
+   sudo apt update
+   sudo apt install -y ros-humble-isaac-ros-perception
+   sudo apt install -y ros-humble-isaac-ros-visual-slam
+   sudo apt install -y ros-humble-isaac-ros-point-cloud-pipeline
+   ```
+
+2. **ROS Package Creation:**
+   Create a ROS 2 package for Isaac perception examples: `robotics_ws/src/isaac_perception_examples/package.xml`
+
+```xml
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>isaac_perception_examples</name>
+  <version>0.0.0</version>
+  <description>Isaac ROS perception examples for the Physical AI & Humanoid Robotics book</description>
+  <maintainer email="humanoid-robotics-book@example.com">Humanoid Robotics Book</maintainer>
+  <license>Apache-2.0</license>
+
+  <depend>rclpy</depend>
+  <depend>std_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <depend>vision_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>cv_bridge</depend>
+  <depend>message_filters</depend>
+  <exec_depend>python3-opencv</exec_depend>
+
+  <test_depend>ament_copyright</test_depend>
+  <test_depend>ament_flake8</test_depend>
+  <test_depend>ament_pep257</test_depend>
+  <test_depend>python3-pytest</test_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>
+```
+
+3. **Setup File:**
+   Create `robotics_ws/src/isaac_perception_examples/setup.py`:
+
+```python
+import os
+from glob import glob
+from setuptools import setup
+from setuptools import find_packages
+
+package_name = 'isaac_perception_examples'
+
+setup(
+    name=package_name,
+    version='0.0.0',
+    packages=find_packages(exclude=['test']),
+    data_files=[
+        ('share/ament_index/resource_index/packages',
+            ['resource/' + package_name]),
+        ('share/' + package_name, ['package.xml']),
+    ],
+    install_requires=['setuptools'],
+    zip_safe=True,
+    maintainer='Humanoid Robotics Book',
+    maintainer_email='humanoid-robotics-book@example.com',
+    description='Isaac ROS perception examples for the Physical AI & Humanoid Robotics book',
+    license='Apache License 2.0',
+    tests_require=['pytest'],
+    entry_points={
+        'console_scripts': [
+            'object_detector = isaac_perception_examples.object_detector_node:main',
+            'depth_estimator = isaac_perception_examples.depth_estimator_node:main',
+        ],
+    },
+)
+```
+
+4. **Object Detection Node:**
+   Create the main object detection node: `robotics_ws/src/isaac_perception_examples/isaac_perception_examples/object_detector_node.py`
+
+```python
+#!/usr/bin/env python3
+
+"""
+Isaac ROS Object Detection Node
+
+This node demonstrates object detection using Isaac ROS extensions.
+In a real implementation, this would connect to Isaac Sim camera data
+and perform GPU-accelerated object detection.
+"""
+
+import rclpy
+from rclpy.node import Node
+from sensor_msgs.msg import Image, CameraInfo
+from vision_msgs.msg import Detection2DArray
+from cv_bridge import CvBridge
+import cv2
+import numpy as np
+
+
+class IsaacObjectDetectorNode(Node):
+    def __init__(self):
+        super().__init__('isaac_object_detector')
+
+        # Create subscribers for camera data
+        self.image_sub = self.create_subscription(
+            Image,
+            '/camera/image_raw',
+            self.image_callback,
+            10
+        )
+
+        self.camera_info_sub = self.create_subscription(
+            CameraInfo,
+            '/camera/camera_info',
+            self.camera_info_callback,
+            10
+        )
+
+        # Create publisher for detection results
+        self.detection_pub = self.create_publisher(
+            Detection2DArray,
+            '/isaac_ros/detections',
+            10
+        )
+
+        # Initialize CV bridge
+        self.bridge = CvBridge()
+
+        # In a real Isaac ROS implementation, we would initialize
+        # Isaac's detection pipeline here
+        self.get_logger().info("Isaac Object Detection Node initialized")
+
+    def image_callback(self, msg):
+        """Process incoming camera image and perform object detection"""
+        try:
+            # Convert ROS Image to OpenCV
+            cv_image = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
+
+            # In a real Isaac ROS implementation, we would use
+            # Isaac's GPU-accelerated detection pipeline here
+            # For this example, we'll simulate detection with OpenCV
+
+            # Simulate object detection (in real implementation, use Isaac ROS Detection)
+            detections = self.simulate_object_detection(cv_image)
+
+            # Create detection message
+            detection_msg = Detection2DArray()
+            detection_msg.header = msg.header
+            detection_msg.detections = detections
+
+            # Publish detection results
+            self.detection_pub.publish(detection_msg)
+
+            self.get_logger().info(f"Published {len(detections)} detections")
+
+        except Exception as e:
+            self.get_logger().error(f"Error processing image: {str(e)}")
+
+    def simulate_object_detection(self, image):
+        """Simulate object detection results (in real implementation, use Isaac ROS)"""
+        # This is a placeholder that simulates detection results
+        # In a real Isaac ROS implementation, we would use Isaac's
+        # GPU-accelerated detection pipeline
+        import random
+
+        detections = []
+
+        # Simulate detecting some objects (randomly for demonstration)
+        for i in range(random.randint(1, 3)):
+            detection = Detection2D()
+            detection.header.stamp = self.get_clock().now().to_msg()
+
+            # Create a random bounding box
+            bbox = BoundingBox2D()
+            bbox.center.x = random.randint(50, image.shape[1]-50)
+            bbox.center.y = random.randint(50, image.shape[0]-50)
+            bbox.size_x = random.randint(30, 100)
+            bbox.size_y = random.randint(30, 100)
+            detection.bbox = bbox
+
+            # Create a detection result
+            result = ObjectHypothesisWithPose()
+            result.hypothesis.class_id = "object"
+            result.hypothesis.score = random.uniform(0.7, 0.95)
+            detection.results.append(result)
+
+            detections.append(detection)
+
+        return detections
+
+    def camera_info_callback(self, msg):
+        """Process camera information"""
+        # Store camera parameters for later use
+        self.camera_matrix = np.array(msg.k).reshape(3, 3)
+        self.distortion_coeffs = np.array(msg.d)
+
+
+def main(args=None):
+    rclpy.init(args=args)
+
+    detector_node = IsaacObjectDetectorNode()
+
+    try:
+        rclpy.spin(detector_node)
+    except KeyboardInterrupt:
+        detector_node.get_logger().info("Shutting down Isaac Object Detection Node")
+    finally:
+        detector_node.destroy_node()
+        rclpy.shutdown()
+
+
+# Additional imports needed for the detection message
+from vision_msgs.msg import Detection2D, BoundingBox2D, ObjectHypothesisWithPose
+
+
+if __name__ == '__main__':
+    main()
+```
+
+5. **Depth Estimation Node:**
+   Create the depth estimation node: `robotics_ws/src/isaac_perception_examples/isaac_perception_examples/depth_estimator_node.py`
+
+```python
+#!/usr/bin/env python3
+
+"""
+Isaac ROS Depth Estimation Node
+
+This node demonstrates depth estimation using Isaac ROS extensions.
+In a real implementation, this would process stereo camera data
+or depth camera data from Isaac Sim.
+"""
+
+import rclpy
+from rclpy.node import Node
+from sensor_msgs.msg import Image, CameraInfo
+from sensor_msgs.msg import PointCloud2, PointField
+from std_msgs.msg import Header
+import sensor_msgs_py.point_cloud2 as pc2
+from cv_bridge import CvBridge
+import cv2
+import numpy as np
+from collections import namedtuple
+
+
+class IsaacDepthEstimatorNode(Node):
+    def __init__(self):
+        super().__init__('isaac_depth_estimator')
+
+        # Create subscribers for depth camera data
+        self.depth_image_sub = self.create_subscription(
+            Image,
+            '/depth_camera/depth/image_raw',
+            self.depth_image_callback,
+            10
+        )
+
+        self.camera_info_sub = self.create_subscription(
+            CameraInfo,
+            '/depth_camera/camera_info',
+            self.camera_info_callback,
+            10
+        )
+
+        # Create publisher for point cloud
+        self.pointcloud_pub = self.create_publisher(
+            PointCloud2,
+            '/isaac_ros/pointcloud',
+            10
+        )
+
+        # Initialize CV bridge
+        self.bridge = CvBridge()
+
+        # Store camera parameters
+        self.camera_matrix = None
+        self.camera_info = None
+
+        # In a real Isaac ROS implementation, we would initialize
+        # Isaac's depth estimation pipeline here
+        self.get_logger().info("Isaac Depth Estimation Node initialized")
+
+    def depth_image_callback(self, msg):
+        """Process incoming depth image and create point cloud"""
+        try:
+            # Convert ROS Image to OpenCV
+            depth_image = self.bridge.imgmsg_to_cv2(msg, desired_encoding='32FC1')
+
+            # In a real Isaac ROS implementation, we would use
+            # Isaac's GPU-accelerated depth processing pipeline
+            # For this example, we'll convert depth image to point cloud
+
+            if self.camera_matrix is not None:
+                # Create point cloud from depth image
+                pointcloud_msg = self.create_pointcloud_from_depth(
+                    depth_image, self.camera_matrix, msg.header
+                )
+
+                # Publish point cloud
+                self.pointcloud_pub.publish(pointcloud_msg)
+
+                self.get_logger().info("Published point cloud")
+
+        except Exception as e:
+            self.get_logger().error(f"Error processing depth image: {str(e)}")
+
+    def create_pointcloud_from_depth(self, depth_image, camera_matrix, header):
+        """Create point cloud from depth image using camera matrix"""
+        height, width = depth_image.shape
+
+        # Create coordinate grids
+        u_coords, v_coords = np.meshgrid(np.arange(width), np.arange(height))
+
+        # Get camera parameters
+        fx = camera_matrix[0, 0]
+        fy = camera_matrix[1, 1]
+        cx = camera_matrix[0, 2]
+        cy = camera_matrix[1, 2]
+
+        # Calculate 3D coordinates
+        x = (u_coords - cx) * depth_image / fx
+        y = (v_coords - cy) * depth_image / fy
+        z = depth_image
+
+        # Flatten arrays and combine
+        points = np.column_stack((x.flatten(), y.flatten(), z.flatten()))
+
+        # Remove invalid points (where depth is 0 or NaN)
+        valid_mask = (z.flatten() > 0) & np.isfinite(points[:, 0]) & np.isfinite(points[:, 1]) & np.isfinite(points[:, 2])
+        points = points[valid_mask]
+
+        # Create PointCloud2 message
+        header = Header()
+        header.stamp = self.get_clock().now().to_msg()
+        header.frame_id = "depth_camera_frame"  # This should match your camera frame
+
+        # Define point fields
+        fields = [
+            PointField(name='x', offset=0, datatype=PointField.FLOAT32, count=1),
+            PointField(name='y', offset=4, datatype=PointField.FLOAT32, count=1),
+            PointField(name='z', offset=8, datatype=PointField.FLOAT32, count=1)
+        ]
+
+        # Create point cloud
+        pointcloud_msg = pc2.create_cloud(header, fields, points)
+
+        return pointcloud_msg
+
+    def camera_info_callback(self, msg):
+        """Process camera information"""
+        # Store camera parameters for later use
+        self.camera_matrix = np.array(msg.k).reshape(3, 3)
+        self.camera_info = msg
+
+
+def main(args=None):
+    rclpy.init(args=args)
+
+    depth_estimator = IsaacDepthEstimatorNode()
+
+    try:
+        rclpy.spin(depth_estimator)
+    except KeyboardInterrupt:
+        depth_estimator.get_logger().info("Shutting down Isaac Depth Estimation Node")
+    finally:
+        depth_estimator.destroy_node()
+        rclpy.shutdown()
+
+
+if __name__ == '__main__':
+    main()
+```
+
+6. **Isaac Sim Configuration for ROS Bridge:**
+   Create a configuration file to set up the ROS bridge in Isaac Sim: `isaac_sim_assets/configs/ros_bridge_config.py`
+
+```python
+"""
+Isaac Sim ROS Bridge Configuration
+
+This script configures Isaac Sim to publish sensor data to ROS 2 topics
+compatible with Isaac ROS perception nodes.
+"""
+
+import omni
+from pxr import Gf, Sdf, UsdGeom
+import carb
+
+
+def configure_ros_bridge():
+    """
+    Configure Isaac Sim to publish sensor data to ROS 2
+    """
+    carb.log_info("Configuring Isaac Sim ROS Bridge for perception")
+
+    # Enable ROS bridge extension
+    omni.kit.app.get_app().extension_manager.set_enabled("omni.isaac.ros2_bridge", True)
+
+    # Configure camera to publish to ROS topics
+    configure_camera_ros_publisher()
+
+    # Configure depth camera to publish to ROS topics
+    configure_depth_camera_ros_publisher()
+
+    # Configure LiDAR to publish to ROS topics
+    configure_lidar_ros_publisher()
+
+    carb.log_info("Isaac Sim ROS Bridge configured for perception pipeline")
+
+
+def configure_camera_ros_publisher():
+    """
+    Configure RGB camera to publish to ROS topics
+    """
+    carb.log_info("Configuring RGB camera ROS publisher")
+
+    # In a real implementation, we would connect the camera to ROS topics
+    # like /camera/image_raw and /camera/camera_info
+    camera_config = {
+        "image_topic": "/camera/image_raw",
+        "camera_info_topic": "/camera/camera_info",
+        "frame_id": "camera_link",
+        "format": "rgb8"
+    }
+
+    carb.log_info(f"Camera configured with: {camera_config}")
+
+
+def configure_depth_camera_ros_publisher():
+    """
+    Configure depth camera to publish to ROS topics
+    """
+    carb.log_info("Configuring depth camera ROS publisher")
+
+    # In a real implementation, we would connect the depth camera to ROS topics
+    # like /depth_camera/depth/image_raw and /depth_camera/camera_info
+    depth_camera_config = {
+        "depth_topic": "/depth_camera/depth/image_raw",
+        "image_topic": "/depth_camera/image_raw",
+        "camera_info_topic": "/depth_camera/camera_info",
+        "frame_id": "depth_camera_link",
+        "format": "32FC1"
+    }
+
+    carb.log_info(f"Depth camera configured with: {depth_camera_config}")
+
+
+def configure_lidar_ros_publisher():
+    """
+    Configure LiDAR to publish to ROS topics
+    """
+    carb.log_info("Configuring LiDAR ROS publisher")
+
+    # In a real implementation, we would connect the LiDAR to ROS topics
+    # like /lidar/scan or /lidar/pointcloud
+    lidar_config = {
+        "scan_topic": "/lidar/scan",
+        "pointcloud_topic": "/lidar/pointcloud",
+        "frame_id": "lidar_link"
+    }
+
+    carb.log_info(f"LiDAR configured with: {lidar_config}")
+
+
+def setup_perception_pipeline():
+    """
+    Set up the complete perception pipeline in Isaac Sim
+    """
+    carb.log_info("Setting up Isaac ROS perception pipeline")
+
+    # Configure ROS bridge
+    configure_ros_bridge()
+
+    # In a real implementation, we would also configure:
+    # - Isaac ROS Detection node
+    # - Isaac ROS Stereo Dense Reconstruction node
+    # - Isaac ROS Object Stereo Tracking node
+    # - Isaac ROS AprilTag Detection node
+
+    carb.log_info("Isaac ROS perception pipeline setup completed")
+
+
+if __name__ == "__main__":
+    setup_perception_pipeline()
+```
+
+7. **Launch File for Isaac ROS Perception:**
+   Create a launch file to start the Isaac ROS perception pipeline: `robotics_ws/src/isaac_perception_examples/launch/isaac_perception_pipeline.launch.py`
+
+```python
+from launch import LaunchDescription
+from launch.actions import DeclareLaunchArgument, RegisterEventHandler
+from launch.substitutions import LaunchConfiguration
+from launch_ros.actions import Node
+from launch.event_handlers import OnProcessStart
+from ament_index_python.packages import get_package_share_directory
+import os
+
+
+def generate_launch_description():
+    # Declare launch arguments
+    namespace_arg = DeclareLaunchArgument(
+        'namespace',
+        default_value='',
+        description='Namespace for all perception nodes'
+    )
+
+    # Isaac ROS Object Detection Node
+    object_detector_node = Node(
+        package='isaac_perception_examples',
+        executable='object_detector',
+        name='object_detector',
+        parameters=[
+            # Add any required parameters for Isaac ROS detection
+        ],
+        remappings=[
+            ('/camera/image_raw', '/camera/image_raw'),
+            ('/camera/camera_info', '/camera/camera_info'),
+            ('/isaac_ros/detections', '/isaac_ros/detections'),
+        ],
+        output='screen'
+    )
+
+    # Isaac ROS Depth Estimation Node
+    depth_estimator_node = Node(
+        package='isaac_perception_examples',
+        executable='depth_estimator',
+        name='depth_estimator',
+        parameters=[
+            # Add any required parameters for Isaac ROS depth estimation
+        ],
+        remappings=[
+            ('/depth_camera/depth/image_raw', '/depth_camera/depth/image_raw'),
+            ('/depth_camera/camera_info', '/depth_camera/camera_info'),
+            ('/isaac_ros/pointcloud', '/isaac_ros/pointcloud'),
+        ],
+        output='screen'
+    )
+
+    # Perception visualization node (RViz2)
+    rviz_config_dir = os.path.join(
+        get_package_share_directory('isaac_perception_examples'),
+        'rviz',
+        'perception_pipeline.rviz'
+    )
+
+    rviz_node = Node(
+        package='rviz2',
+        executable='rviz2',
+        name='rviz2',
+        arguments=['-d', rviz_config_dir],
+        output='screen'
+    )
+
+    return LaunchDescription([
+        namespace_arg,
+        object_detector_node,
+        depth_estimator_node,
+        rviz_node
+    ])
+```
+
+8. **RViz2 Configuration:**
+   Create an RViz2 configuration file to visualize perception results: `robotics_ws/src/isaac_perception_examples/rviz/perception_pipeline.rviz`
+
+```yaml
+Panels:
+  - Class: rviz_common/Displays
+    Help Height: 78
+    Name: Displays
+    Property Tree Widget:
+      Expanded:
+        - /Global Options1
+        - /Status1
+        - /Image1
+        - /PointCloud21
+        - /Detection2DArray1
+      Splitter Ratio: 0.5
+    Tree Height: 695
+  - Class: rviz_common/Selection
+    Name: Selection
+  - Class: rviz_common/Tool Properties
+    Expanded:
+      - /2D Goal Pose1
+      - /Publish Point1
+    Name: Tool Properties
+    Splitter Ratio: 0.5886790156364441
+  - Class: rviz_common/Views
+    Expanded:
+      - /Current View1
+    Name: Views
+    Splitter Ratio: 0.5
+Visualization Manager:
+  Class: ""
+  Displays:
+    - Class: rviz_default_plugins/TF
+      Enabled: true
+      Name: TF
+    - Class: rviz_default_plugins/Image
+      Enabled: true
+      Name: Image
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /camera/image_raw
+    - Class: rviz_default_plugins/PointCloud2
+      Enabled: true
+      Name: PointCloud2
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /isaac_ros/pointcloud
+    - Class: rviz_default_plugins/Detection2DArray
+      Enabled: true
+      Name: Detection2DArray
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /isaac_ros/detections
+  Enabled: true
+  Global Options:
+    Background Color: 48; 48; 48
+    Fixed Frame: base_link
+    Frame Rate: 30
+  Name: root
+  Tools:
+    - Class: rviz_default_plugins/Interact
+      Hide Inactive Objects: true
+    - Class: rviz_default_plugins/MoveCamera
+    - Class: rviz_default_plugins/Select
+    - Class: rviz_default_plugins/FocusCamera
+  Transformation:
+    Current:
+      Class: rviz_default_plugins/TF
+  Value: true
+  Views:
+    Current:
+      Class: rviz_default_plugins/Orbit
+      Name: Current View
+      Target Frame: <Fixed Frame>
+      Value: Orbit (rviz)
+    Saved: ~
+Window Geometry:
+  Displays:
+    collapsed: false
+  Height: 915
+  Hide Left Dock: false
+  Hide Right Dock: false
+  Image:
+    collapsed: false
+  QMainWindow State: 000000ff00000000fd0000000400000000000001560000034bfc0200000008fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003d0000029a000000c900fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261000000010000010f0000034afc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073010000003d0000034a000000a400fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000004420000003efc0100000002fb0000000800540069006d00650100000000000004420000000000000000fb0000000800540069006d00650100000000000004500000000000000000000004ba0000034b00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  Selection:
+    collapsed: false
+  Tool Properties:
+    collapsed: false
+  Views:
+    collapsed: false
+  Width: 1853
+  X: 67
+  Y: 27
+```
+
+9. **Testing the Perception Pipeline:**
+   - Launch Isaac Sim with the humanoid robot and configured sensors
+   - Start the ROS bridge to publish sensor data
+   - Launch the Isaac ROS perception nodes:
+   ```bash
+   ros2 launch isaac_perception_examples isaac_perception_pipeline.launch.py
+   ```
+   - Visualize the results in RViz2
+   - Verify that object detection and depth estimation are working
+
+## Safety Notes
+- Ensure GPU resources are properly managed to avoid overheating
+- Validate perception results before using them for robot control
+- Implement fallback mechanisms when perception fails
+- Test perception pipeline under various lighting conditions
+- Monitor computational load to maintain real-time performance
+
+## Evaluation Criteria
+- Can Isaac Sim publish camera data to ROS 2 topics correctly?
+- Are Isaac ROS perception nodes processing data successfully?
+- Can object detection results be visualized in RViz2?
+- Is the depth estimation pipeline producing accurate point clouds?
+- Does the perception pipeline run in real-time with acceptable latency?
+- Are the perception results accurate and reliable for robot control?

@@ -1,0 +1,21 @@
+#usda 1.0
+(
+    doc = "Arm of the humanoid robot"
+)
+
+def "arm"
+{
+    def Cylinder "collision"
+    {
+        add xformOp:scale = (0.075, 0.075, 0.4)
+        add xformOp:translate = (0, 0, 0)
+        prepend apiSchemas = ["PhysicsRigidBodyAPI"]
+    }
+
+    def Cylinder "visual"
+    {
+        add xformOp:scale = (0.075, 0.075, 0.4)
+        add xformOp:translate = (0, 0, 0)
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    }
+}

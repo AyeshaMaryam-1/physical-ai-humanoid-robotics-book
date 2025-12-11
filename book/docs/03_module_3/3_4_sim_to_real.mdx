@@ -1,0 +1,708 @@
+---
+sidebar_position: 4
+title: "Sim-to-Real Transfer"
+---
+
+# Sim-to-Real Transfer
+
+## Purpose
+This chapter addresses the critical challenge of transferring policies and behaviors learned in simulation to real-world robotic systems. We'll explore domain randomization techniques, reality gap mitigation strategies, and systematic approaches to validate and deploy simulation-trained models on physical humanoid robots. The chapter emphasizes practical methodologies for achieving robust sim-to-real transfer.
+
+## Learning Outcomes
+After completing this chapter, you will be able to:
+- Implement domain randomization techniques to improve sim-to-real transfer
+- Identify and mitigate reality gaps between simulation and physical systems
+- Design systematic validation approaches for transferring policies
+- Apply system identification methods to match simulation to reality
+- Evaluate transfer performance and quantify success metrics
+- Understand the limitations and constraints of sim-to-real approaches
+
+## Prerequisites
+- Completed Module 1 (ROS 2 fundamentals and humanoid URDF)
+- Completed Module 2 (Gazebo & Unity digital twin)
+- Completed Module 3.1-3.3 (Isaac Sim, perception, and navigation)
+- Understanding of machine learning and reinforcement learning concepts
+- Experience with system identification and parameter tuning
+- Knowledge of physical robot safety protocols
+
+## Inputs
+- Simulation-trained policies from previous modules
+- Physical humanoid robot platform specifications
+- Understanding of system dynamics and constraints
+- Safety protocols for physical robot testing
+
+## Outputs
+- Domain randomization strategies for simulation
+- Reality gap analysis and mitigation approaches
+- Validation methodologies for sim-to-real transfer
+- Performance metrics for transfer success
+- Safety guidelines for physical robot deployment
+
+## Key Concepts
+- **Domain Randomization**: Technique to improve sim-to-real transfer by randomizing simulation parameters
+- **Reality Gap**: Differences between simulation and real-world behavior that affect transfer
+- **System Identification**: Process of determining physical system parameters for accurate simulation
+- **Transfer Learning**: Adapting simulation-trained models for real-world use
+- **Validation Protocols**: Systematic approaches to test and validate transfer success
+- **Safety Considerations**: Protocols to ensure safe transition from simulation to reality
+- **Performance Metrics**: Quantitative measures for evaluating transfer effectiveness
+
+## Chapter Outline
+This chapter addresses sim-to-real transfer challenges:
+
+### 1. Understanding Reality Gaps
+- Sources of simulation-reality discrepancies
+- Quantifying differences in dynamics, sensors, and environment
+- Impact on policy transfer performance
+
+### 2. Domain Randomization Techniques
+- Randomizing physical parameters in simulation
+- Environmental variation strategies
+- Sensor noise and uncertainty modeling
+
+### 3. System Identification and Model Calibration
+- Matching simulation to physical system dynamics
+- Parameter estimation methods
+- Validation and verification approaches
+
+### 4. Transfer Validation and Deployment
+- Systematic testing protocols
+- Safety considerations for physical deployment
+- Performance evaluation metrics
+
+## Hands-On Lab
+
+### Implementing Sim-to-Real Transfer Strategies
+
+1. **Reality Gap Analysis:**
+   Understanding the differences between simulation and reality is crucial for successful transfer:
+
+   - **Dynamics Differences**: Simulation may not perfectly model friction, compliance, or complex interactions
+   - **Sensor Noise**: Real sensors have noise, latency, and accuracy limitations not present in simulation
+   - **Actuator Limitations**: Physical actuators have delays, bandwidth limitations, and saturation effects
+   - **Environmental Factors**: Real environments have lighting variations, surface irregularities, and dynamic elements
+
+2. **Domain Randomization Implementation:**
+   Create a domain randomization configuration for Isaac Sim: `isaac_sim_assets/configs/domain_randomization_config.py`
+
+   ```python
+   """
+   Domain Randomization Configuration for Isaac Sim
+
+   This script configures domain randomization parameters in Isaac Sim
+   to improve sim-to-real transfer by training policies across diverse conditions.
+   """
+
+   import omni
+   import carb
+   import numpy as np
+   from pxr import Gf, Sdf, UsdGeom
+   import random
+
+
+   class DomainRandomizationConfig:
+       def __init__(self):
+           self.config = {
+               # Physical properties randomization
+               'mass_range': (0.8, 1.2),  # Multiplier for object masses
+               'friction_range': (0.4, 1.0),  # Range for friction coefficients
+               'restitution_range': (0.1, 0.5),  # Range for restitution coefficients
+
+               # Visual appearance randomization
+               'light_intensity_range': (0.5, 2.0),  # Range for light intensities
+               'material_color_range': (0.0, 1.0),  # Range for material colors
+               'texture_scale_range': (0.8, 1.2),  # Range for texture scaling
+
+               # Sensor noise and parameters
+               'camera_noise_range': (0.0, 0.05),  # Range for camera noise
+               'lidar_noise_range': (0.0, 0.02),  # Range for LiDAR noise
+
+               # Environmental parameters
+               'gravity_range': (-10.0, -9.5),  # Range for gravity magnitude
+               'wind_force_range': (0.0, 0.5),  # Range for wind forces
+           }
+
+       def apply_randomization(self, stage):
+           """
+           Apply domain randomization to the current USD stage
+           """
+           carb.log_info("Applying domain randomization to USD stage")
+
+           # Randomize physical properties
+           self.randomize_masses(stage)
+           self.randomize_friction(stage)
+           self.randomize_restitution(stage)
+
+           # Randomize visual properties
+           self.randomize_lighting(stage)
+           self.randomize_materials(stage)
+
+           # Randomize environmental conditions
+           self.randomize_environment(stage)
+
+           carb.log_info("Domain randomization applied successfully")
+
+       def randomize_masses(self, stage):
+           """Randomize masses of rigid bodies"""
+           carb.log_info("Randomizing masses")
+           # In a real implementation, this would iterate through all rigid bodies
+           # and apply random multipliers within the specified range
+
+       def randomize_friction(self, stage):
+           """Randomize friction coefficients"""
+           carb.log_info("Randomizing friction coefficients")
+           # In a real implementation, this would modify friction parameters
+           # of collision materials
+
+       def randomize_restitution(self, stage):
+           """Randomize restitution coefficients"""
+           carb.log_info("Randomizing restitution coefficients")
+           # In a real implementation, this would modify bounciness parameters
+
+       def randomize_lighting(self, stage):
+           """Randomize lighting conditions"""
+           carb.log_info("Randomizing lighting conditions")
+           # In a real implementation, this would modify light intensities
+           # and colors within the specified ranges
+
+       def randomize_materials(self, stage):
+           """Randomize material properties"""
+           carb.log_info("Randomizing material properties")
+           # In a real implementation, this would modify material colors
+           # and textures within the specified ranges
+
+       def randomize_environment(self, stage):
+           """Randomize environmental conditions"""
+           carb.log_info("Randomizing environmental conditions")
+           # In a real implementation, this would modify gravity, wind, etc.
+
+
+   def setup_domain_randomization():
+       """
+       Set up domain randomization in Isaac Sim
+       """
+       carb.log_info("Setting up domain randomization pipeline")
+
+       # Create domain randomization config
+       dr_config = DomainRandomizationConfig()
+
+       # Get current stage
+       stage = omni.usd.get_context().get_stage()
+
+       # Apply randomization
+       dr_config.apply_randomization(stage)
+
+       carb.log_info("Domain randomization setup completed")
+
+
+   def update_randomization_periodically():
+       """
+       Function to periodically update randomization during training
+       """
+       carb.log_info("Setting up periodic domain randomization updates")
+
+       # This would typically be called at regular intervals during training
+       # to continuously randomize the simulation environment
+       stage = omni.usd.get_context().get_stage()
+       dr_config = DomainRandomizationConfig()
+       dr_config.apply_randomization(stage)
+
+
+   if __name__ == "__main__":
+       setup_domain_randomization()
+   ```
+
+3. **System Identification for Model Calibration:**
+   Create a system identification approach to match simulation to reality: `robotics_ws/src/humanoid_nav2_config/config/system_identification.md`
+
+   ```markdown
+   # System Identification for Sim-to-Real Transfer
+
+   ## Purpose
+   This document outlines the process of identifying and calibrating system parameters to minimize the reality gap between simulation and physical humanoid robot.
+
+   ## Parameters to Identify
+
+   ### Physical Properties
+   - **Mass Properties**: Individual link masses, centers of mass, and inertial properties
+   - **Joint Properties**: Gear ratios, friction coefficients, compliance parameters
+   - **Actuator Properties**: Torque constants, dead zones, bandwidth limitations
+
+   ### Sensor Properties
+   - **Camera Calibration**: Intrinsic and extrinsic parameters, distortion coefficients
+   - **LiDAR Calibration**: Range accuracy, angular resolution, noise characteristics
+   - **IMU Calibration**: Bias, scale factor, alignment errors
+
+   ### Environmental Properties
+   - **Surface Properties**: Friction coefficients, compliance, texture
+   - **Gravity**: Local gravity magnitude and direction
+   - **Air Resistance**: Drag coefficients for different body parts
+
+   ## Identification Process
+
+   1. **Data Collection**
+      - Collect synchronized sensor and actuator data from physical robot
+      - Perform controlled experiments (e.g., step responses, frequency sweeps)
+      - Record multiple trials for statistical significance
+
+   2. **Parameter Estimation**
+      - Use system identification techniques (e.g., least squares, maximum likelihood)
+      - Estimate parameters that minimize prediction error
+      - Validate model on held-out test data
+
+   3. **Simulation Update**
+      - Update simulation parameters with identified values
+      - Verify that simulation behavior matches physical system
+      - Iterate until sufficient match is achieved
+
+   ## Validation Metrics
+
+   - **Position Tracking Error**: RMS error between simulated and real joint positions
+   - **Velocity Tracking Error**: RMS error between simulated and real joint velocities
+   - **Prediction Accuracy**: How well simulation predicts real behavior
+   - **Control Performance**: Similarity in control effort and response characteristics
+   ```
+
+4. **Transfer Validation Protocol:**
+   Create a validation approach document: `robotics_ws/src/humanoid_nav2_config/config/transfer_validation.md`
+
+   ```markdown
+   # Sim-to-Real Transfer Validation Protocol
+
+   ## Purpose
+   This protocol defines systematic approaches to validate successful transfer of simulation-trained policies to physical humanoid robots.
+
+   ## Pre-Transfer Validation
+
+   1. **Simulation Performance Verification**
+      - Ensure policy performs consistently in varied simulation conditions
+      - Test with domain randomization parameters
+      - Validate safety and stability margins
+
+   2. **Safety Precautions**
+      - Implement position, velocity, and torque limits
+      - Set up emergency stop procedures
+      - Verify physical robot safety systems
+
+   3. **Gradual Deployment**
+      - Start with open-loop execution of planned trajectories
+      - Progress to closed-loop control with safety limits
+      - Gradually increase autonomy level
+
+   ## Transfer Testing Phases
+
+   ### Phase 1: Open-Loop Testing
+   - Execute pre-planned trajectories on physical robot
+   - Compare to simulation execution
+   - Measure tracking accuracy and deviations
+
+   ### Phase 2: Closed-Loop Testing
+   - Enable closed-loop control with safety limits
+   - Test basic behaviors and reactions
+   - Monitor for unexpected behaviors
+
+   ### Phase 3: Full Policy Execution
+   - Deploy full simulation-trained policy
+   - Monitor performance metrics
+   - Collect data for further analysis
+
+   ## Performance Metrics
+
+   - **Success Rate**: Percentage of tasks completed successfully
+   - **Execution Time**: Time to complete tasks compared to simulation
+   - **Energy Efficiency**: Power consumption compared to simulation predictions
+   - **Safety Violations**: Number of safety limit activations
+   - **Tracking Error**: Deviation from expected behavior
+
+   ## Safety Considerations
+
+   - Never exceed physical robot safety limits
+   - Have human operator ready to intervene
+   - Start with conservative parameters and gradually increase
+   - Monitor robot health and temperature
+   - Use protective equipment and safe testing environment
+   ```
+
+5. **Simulation-Reality Comparison Framework:**
+   Create a comparison framework to evaluate transfer: `robotics_ws/src/humanoid_nav2_config/scripts/sim_real_comparison.py`
+
+   ```python
+   #!/usr/bin/env python3
+
+   """
+   Simulation-Reality Comparison Framework
+
+   This script provides tools to compare simulation and real-world robot behavior
+   for validating sim-to-real transfer.
+   """
+
+   import rclpy
+   from rclpy.node import Node
+   from sensor_msgs.msg import JointState
+   from geometry_msgs.msg import Twist, PoseStamped
+   from nav_msgs.msg import Odometry
+   import numpy as np
+   import matplotlib.pyplot as plt
+   from scipy.spatial.transform import Rotation as R
+
+
+   class SimRealComparison(Node):
+       def __init__(self):
+           super().__init__('sim_real_comparison')
+
+           # Subscribers for simulation and real robot data
+           self.sim_joint_sub = self.create_subscription(
+               JointState,
+               '/sim/joint_states',
+               self.sim_joint_callback,
+               10
+           )
+
+           self.real_joint_sub = self.create_subscription(
+               JointState,
+               '/real/joint_states',
+               self.real_joint_callback,
+               10
+           )
+
+           self.sim_odom_sub = self.create_subscription(
+               Odometry,
+               '/sim/odom',
+               self.sim_odom_callback,
+               10
+           )
+
+           self.real_odom_sub = self.create_subscription(
+               Odometry,
+               '/real/odom',
+               self.real_odom_callback,
+               10
+           )
+
+           # Storage for comparison data
+           self.sim_joint_data = []
+           self.real_joint_data = []
+           self.sim_odom_data = []
+           self.real_odom_data = []
+
+           # Timing
+           self.start_time = self.get_clock().now()
+
+           self.get_logger().info("Simulation-Reality Comparison Node initialized")
+
+       def sim_joint_callback(self, msg):
+           """Process simulation joint state data"""
+           self.sim_joint_data.append({
+               'timestamp': msg.header.stamp,
+               'positions': np.array(msg.position),
+               'velocities': np.array(msg.velocity),
+               'effort': np.array(msg.effort)
+           })
+
+       def real_joint_callback(self, msg):
+           """Process real robot joint state data"""
+           self.real_joint_data.append({
+               'timestamp': msg.header.stamp,
+               'positions': np.array(msg.position),
+               'velocities': np.array(msg.velocity),
+               'effort': np.array(msg.effort)
+           })
+
+       def sim_odom_callback(self, msg):
+           """Process simulation odometry data"""
+           self.sim_odom_data.append({
+               'timestamp': msg.header.stamp,
+               'position': np.array([msg.pose.pose.position.x, msg.pose.pose.position.y, msg.pose.pose.position.z]),
+               'orientation': [msg.pose.pose.orientation.x, msg.pose.pose.orientation.y,
+                              msg.pose.pose.orientation.z, msg.pose.pose.orientation.w]
+           })
+
+       def real_odom_callback(self, msg):
+           """Process real robot odometry data"""
+           self.real_odom_data.append({
+               'timestamp': msg.header.stamp,
+               'position': np.array([msg.pose.pose.position.x, msg.pose.pose.position.y, msg.pose.pose.position.z]),
+               'orientation': [msg.pose.pose.orientation.x, msg.pose.pose.orientation.y,
+                              msg.pose.pose.orientation.z, msg.pose.pose.orientation.w]
+           })
+
+       def compute_comparison_metrics(self):
+           """Compute metrics comparing simulation and real data"""
+           if len(self.sim_joint_data) == 0 or len(self.real_joint_data) == 0:
+               self.get_logger().warn("Insufficient data for comparison")
+               return
+
+           # Align data by time
+           sim_positions = np.array([d['positions'] for d in self.sim_joint_data])
+           real_positions = np.array([d['positions'] for d in self.real_joint_data])
+
+           # Truncate to same length
+           min_len = min(len(sim_positions), len(real_positions))
+           sim_pos = sim_positions[:min_len]
+           real_pos = real_positions[:min_len]
+
+           # Compute position tracking error
+           pos_error = np.mean(np.abs(sim_pos - real_pos))
+           self.get_logger().info(f"Average position tracking error: {pos_error:.4f}")
+
+           # Compute RMS error
+           rms_error = np.sqrt(np.mean((sim_pos - real_pos)**2))
+           self.get_logger().info(f"RMS position tracking error: {rms_error:.4f}")
+
+           return {
+               'mean_error': pos_error,
+               'rms_error': rms_error
+           }
+
+       def plot_comparison(self):
+           """Plot comparison between simulation and real data"""
+           if len(self.sim_joint_data) == 0 or len(self.real_joint_data) == 0:
+               self.get_logger().warn("Insufficient data for plotting")
+               return
+
+           # Extract position data
+           sim_positions = np.array([d['positions'] for d in self.sim_joint_data])
+           real_positions = np.array([d['positions'] for d in self.real_joint_data])
+
+           # Truncate to same length
+           min_len = min(len(sim_positions), len(real_positions))
+           sim_pos = sim_positions[:min_len]
+           real_pos = real_positions[:min_len]
+
+           # Plot comparison
+           fig, axes = plt.subplots(min(sim_pos.shape[1], 4), 1, figsize=(10, 8))
+           if sim_pos.shape[1] == 1:
+               axes = [axes]
+
+           for i in range(min(sim_pos.shape[1], 4)):
+               axes[i].plot(sim_pos[:, i], label=f'Simulation Joint {i}', alpha=0.7)
+               axes[i].plot(real_pos[:, i], label=f'Real Joint {i}', alpha=0.7)
+               axes[i].set_title(f'Joint {i} Position Comparison')
+               axes[i].legend()
+               axes[i].grid(True)
+
+           plt.tight_layout()
+           plt.savefig('/tmp/sim_real_comparison.png')
+           self.get_logger().info("Comparison plot saved to /tmp/sim_real_comparison.png")
+           plt.show()
+
+
+   def main(args=None):
+       rclpy.init(args=args)
+
+       comparison_node = SimRealComparison()
+
+       # Run for a fixed duration to collect data
+       timer = comparison_node.create_timer(10.0, lambda: rclpy.shutdown())
+
+       try:
+           rclpy.spin(comparison_node)
+       except KeyboardInterrupt:
+           comparison_node.get_logger().info("Shutting down comparison node")
+
+       # Compute final metrics
+       metrics = comparison_node.compute_comparison_metrics()
+       comparison_node.plot_comparison()
+
+       comparison_node.destroy_node()
+
+
+   if __name__ == '__main__':
+       main()
+   ```
+
+6. **Domain Randomization in Isaac Sim:**
+   Create a more detailed domain randomization script for Isaac Sim: `isaac_sim_assets/scripts/domain_randomization.py`
+
+   ```python
+   """
+   Advanced Domain Randomization for Isaac Sim
+
+   This script implements advanced domain randomization techniques
+   to improve sim-to-real transfer capabilities for humanoid robots.
+   """
+
+   import omni
+   import omni.kit.commands
+   import carb
+   import numpy as np
+   import random
+   from pxr import Usd, UsdGeom, Gf, Sdf, UsdPhysics, PhysxSchema
+   from omni.isaac.core.utils.stage import add_reference_to_stage
+   from omni.isaac.core.utils.nucleus import get_assets_root_path
+   from omni.isaac.core.utils.prims import get_prim_at_path
+   from omni.isaac.core.utils.viewports import set_camera_view
+   from omni.isaac.core import World
+   from omni.isaac.core.robots import Robot
+   from omni.isaac.core.utils.semantics import add_semantic_label
+
+
+   class AdvancedDomainRandomization:
+       def __init__(self):
+           self.world = World()
+           self.stage = omni.usd.get_context().get_stage()
+
+           # Define randomization ranges
+           self.mass_range = (0.8, 1.2)
+           self.friction_range = (0.4, 1.0)
+           self.restitution_range = (0.1, 0.5)
+           self.damping_range = (0.01, 0.1)
+           self.stiffness_range = (100, 1000)
+
+           # Visual randomization
+           self.light_intensity_range = (0.5, 2.0)
+           self.material_color_range = (0.0, 1.0)
+           self.texture_scale_range = (0.8, 1.2)
+
+           # Sensor randomization
+           self.camera_noise_range = (0.0, 0.05)
+           self.lidar_noise_range = (0.0, 0.02)
+
+       def randomize_robot_dynamics(self):
+           """Randomize the dynamics properties of the humanoid robot"""
+           carb.log_info("Randomizing humanoid robot dynamics")
+
+           # Get robot prims
+           robot_paths = [
+               "/World/humanoid_robot/base_link",
+               "/World/humanoid_robot/torso",
+               "/World/humanoid_robot/head",
+               "/World/humanoid_robot/left_arm",
+               "/World/humanoid_robot/right_arm",
+               "/World/humanoid_robot/left_leg",
+               "/World/humanoid_robot/right_leg"
+           ]
+
+           for path in robot_paths:
+               prim = self.stage.GetPrimAtPath(path)
+               if not prim.IsValid():
+                   continue
+
+               # Randomize mass
+               random_mass = random.uniform(*self.mass_range)
+               if prim.HasAPI(UsdPhysics.MassAPI):
+                   mass_api = UsdPhysics.MassAPI(prim)
+                   mass_attr = mass_api.GetMassAttr()
+                   original_mass = mass_attr.Get()
+                   new_mass = original_mass * random_mass
+                   mass_attr.Set(new_mass)
+
+               # Randomize friction
+               random_friction = random.uniform(*self.friction_range)
+               if prim.HasAPI(UsdPhysics.MaterialAPI):
+                   material_api = UsdPhysics.MaterialAPI(prim)
+                   friction_attr = material_api.GetStaticFrictionAttr()
+                   friction_attr.Set(random_friction)
+
+               # Randomize restitution
+               random_restitution = random.uniform(*self.restitution_range)
+               if prim.HasAPI(UsdPhysics.MaterialAPI):
+                   material_api = UsdPhysics.MaterialAPI(prim)
+                   restitution_attr = material_api.GetRestitutionAttr()
+                   restitution_attr.Set(random_restitution)
+
+           carb.log_info("Robot dynamics randomization completed")
+
+       def randomize_environment(self):
+           """Randomize environmental conditions"""
+           carb.log_info("Randomizing environmental conditions")
+
+           # Randomize gravity
+           gravity_magnitude = random.uniform(9.5, 10.0)
+           physics_scene_path = Sdf.Path("/World/physicsScene")
+           physics_scene = UsdPhysics.Scene.Get(self.stage, physics_scene_path)
+           if physics_scene:
+               gravity_attr = physics_scene.GetGravityMagnitudeAttr()
+               gravity_attr.Set(gravity_magnitude)
+
+           # Randomize lighting conditions
+           light_prims = [prim for prim in self.stage.TraverseAll()
+                         if prim.GetTypeName() in ["DistantLight", "DomeLight"]]
+
+           for light_prim in light_prims:
+               light_api = UsdGeom.Light(light_prim)
+               intensity_attr = light_api.GetIntensityAttr()
+               original_intensity = intensity_attr.Get()
+               random_multiplier = random.uniform(*self.light_intensity_range)
+               new_intensity = original_intensity * random_multiplier
+               intensity_attr.Set(new_intensity)
+
+           carb.log_info("Environmental randomization completed")
+
+       def randomize_sensors(self):
+           """Randomize sensor properties to simulate real-world noise"""
+           carb.log_info("Randomizing sensor properties")
+
+           # This would typically involve configuring Isaac Sim's sensor nodes
+           # to add noise, latency, and other real-world characteristics
+           # In a real implementation, we would access the sensor nodes directly
+           # and modify their noise parameters
+
+           # For demonstration, we'll log what would be randomized
+           camera_noise = random.uniform(*self.camera_noise_range)
+           lidar_noise = random.uniform(*self.lidar_noise_range)
+
+           carb.log_info(f"Camera noise level: {camera_noise}")
+           carb.log_info(f"LiDAR noise level: {lidar_noise}")
+
+       def apply_randomization(self):
+           """Apply all domain randomization techniques"""
+           carb.log_info("Applying advanced domain randomization")
+
+           self.randomize_robot_dynamics()
+           self.randomize_environment()
+           self.randomize_sensors()
+
+           carb.log_info("Advanced domain randomization applied successfully")
+
+       def update_randomization_periodically(self):
+           """Update randomization at regular intervals during training"""
+           # This would be called periodically during RL training
+           # to continuously randomize the environment
+           self.apply_randomization()
+
+
+   def setup_advanced_domain_randomization():
+       """Setup function to initialize advanced domain randomization"""
+       carb.log_info("Setting up advanced domain randomization")
+
+       # Create the domain randomization manager
+       dr_manager = AdvancedDomainRandomization()
+
+       # Apply initial randomization
+       dr_manager.apply_randomization()
+
+       # Set up periodic updates (in a real implementation)
+       # This would typically be done through Isaac Sim's update loop
+       # omni.kit.app.get_app().get_update_event_stream().create_subscription_to_pop(
+       #     lambda e: dr_manager.update_randomization_periodically()
+       # )
+
+       carb.log_info("Advanced domain randomization setup completed")
+
+
+   if __name__ == "__main__":
+       setup_advanced_domain_randomization()
+   ```
+
+7. **Testing the Sim-to-Real Transfer:**
+   - Implement domain randomization in Isaac Sim training
+   - Train policies with randomized parameters
+   - Validate policies in simulation with different randomization settings
+   - Deploy to physical robot with appropriate safety measures
+   - Compare performance metrics between simulation and reality
+
+## Safety Notes
+- Always implement safety limits and emergency stops when testing on physical robots
+- Gradually increase autonomy levels during transfer validation
+- Monitor robot health and environmental conditions during testing
+- Have human operators ready to intervene during physical testing
+- Document all safety procedures and ensure compliance with safety guidelines
+
+## Evaluation Criteria
+- Does domain randomization improve the robustness of simulation-trained policies?
+- Can policies trained with domain randomization transfer successfully to physical robots?
+- Are the reality gap metrics within acceptable bounds?
+- Do safety protocols prevent dangerous behaviors during transfer?
+- Is the validation protocol systematic and reproducible?
+- Can performance be quantitatively measured and compared between simulation and reality?

@@ -1,0 +1,41 @@
+{
+  "experience": "omni.isaac.sim.python_app",
+  "renderer": "RayTracedLightMap",
+  "window_width": 1920,
+  "window_height": 1080,
+  "clear_color": [0.4, 0.4, 0.4, 1.0],
+  "reset_on_stop": true,
+  "headless": false,
+  "physics": {
+    "solver_type": "TGS",
+    "use_gpu": true,
+    "use_gpu_dynamics": true,
+    "solver_position_iteration_count": 4,
+    "solver_velocity_iteration_count": 1,
+    "stage_units_in_meters": 1.0,
+    "default_physics_dt": 0.008333333333333,
+    "print_timing": false,
+    "enable_flatcache": false,
+    "enable_gpu_feedback": false,
+    "use_broadphase_fallback": false,
+    "enable_enhanced_determinism": false,
+    "default_contact_offset": 0.001,
+    "default_rest_offset": 0.0
+  },
+  "exts": {
+    "omni.isaac.ros2_bridge": {
+      "enabled": true
+    },
+    "omni.isaac.range_sensor": {
+      "enabled": true
+    },
+    "omni.isaac.sensor": {
+      "enabled": true
+    },
+    "omni.kit.window.viewport": {
+      "settings": {
+        "renderer": "RayTracedLightMap"
+      }
+    }
+  }
+}

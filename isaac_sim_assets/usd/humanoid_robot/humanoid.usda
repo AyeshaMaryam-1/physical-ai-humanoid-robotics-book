@@ -1,0 +1,57 @@
+#usda 1.0
+(
+    doc = "Simple Humanoid Robot in USD format for Isaac Sim"
+    metersPerUnit = 1.0
+)
+
+def Xform "humanoid_robot"
+{
+    def Xform "base_link"
+    {
+        add references = </humanoid_robot/parts/base_link.usda>
+
+        def Xform "torso"
+        {
+            add references = </humanoid_robot/parts/torso.usda>
+            add xformOp:translate = (0, 0.5, 0)
+        }
+
+        def Xform "head"
+        {
+            add references = </humanoid_robot/parts/head.usda>
+            add xformOp:translate = (0, 0.9, 0)
+        }
+
+        def Xform "left_arm"
+        {
+            add references = </humanoid_robot/parts/arm.usda>
+            add xformOp:translate = (-0.4, 0.3, 0)
+            add xformOp:rotateY = 45
+        }
+
+        def Xform "right_arm"
+        {
+            add references = </humanoid_robot/parts/arm.usda>
+            add xformOp:translate = (0.4, 0.3, 0)
+            add xformOp:rotateY = -45
+        }
+
+        def Xform "left_leg"
+        {
+            add references = </humanoid_robot/parts/leg.usda>
+            add xformOp:translate = (-0.15, -0.5, 0)
+        }
+
+        def Xform "right_leg"
+        {
+            add references = </humanoid_robot/parts/leg.usda>
+            add xformOp:translate = (0.15, -0.5, 0)
+        }
+
+        def Xform "camera_link"
+        {
+            add references = </humanoid_robot/parts/camera.usda>
+            add xformOp:translate = (0, 0.7, 0.15)
+        }
+    }
+}

@@ -1,0 +1,474 @@
+---
+sidebar_position: 1
+title: "NVIDIA Isaac Sim Essentials"
+---
+
+# NVIDIA Isaac Sim Essentials
+
+## Purpose
+This chapter introduces NVIDIA Isaac Sim as a high-fidelity simulation environment for robotics, specifically focusing on humanoid robot simulation. We'll explore the fundamental concepts of Isaac Sim, its USD-based scene representation, and how to create and configure humanoid robots for realistic simulation with advanced physics and rendering capabilities.
+
+## Learning Outcomes
+After completing this chapter, you will be able to:
+- Install and configure NVIDIA Isaac Sim for humanoid robotics development
+- Understand the Universal Scene Description (USD) format and its role in Isaac Sim
+- Create and import humanoid robot models in USD format
+- Configure physics properties for realistic humanoid simulation
+- Set up lighting, materials, and environments for photorealistic rendering
+- Implement basic simulation workflows in Isaac Sim
+- Integrate Isaac Sim with ROS 2 for robot control and perception
+
+## Prerequisites
+- Completed Module 1 (ROS 2 fundamentals and humanoid URDF)
+- Completed Module 2 (Gazebo & Unity digital twin)
+- Understanding of 3D modeling concepts
+- Basic knowledge of USD (Universal Scene Description) format
+- Experience with Python for automation and scripting
+
+## Inputs
+- Completed humanoid robot URDF model with sensors
+- Working ROS 2 environment with sensor data
+- Understanding of USD and 3D scene composition
+- NVIDIA Isaac Sim installation (Omniverse-based)
+
+## Outputs
+- Isaac Sim project with humanoid robot model
+- USD-based scene with configured physics
+- Photorealistic rendering setup
+- Working ROS 2 integration
+- Basic simulation workflows
+
+## Key Concepts
+- **Universal Scene Description (USD)**: NVIDIA's format for 3D scene representation and interchange
+- **Isaac Sim Architecture**: Omniverse-based simulation platform with PhysX physics engine
+- **USD Robot Description**: Converting URDF to USD format for Isaac Sim compatibility
+- **Physics Configuration**: Setting up realistic physical properties for humanoid joints and bodies
+- **Material and Lighting**: Creating photorealistic appearances and lighting conditions
+- **ROS 2 Integration**: Connecting Isaac Sim to ROS 2 for control and perception
+- **Simulation Workflows**: Creating, running, and debugging simulation scenarios
+
+## Chapter Outline
+This chapter builds the foundation for Isaac Sim usage:
+
+### 1. Isaac Sim Installation and Setup
+- Installing NVIDIA Isaac Sim and Omniverse requirements
+- Understanding the Isaac Sim architecture and components
+- Basic project structure and file organization
+
+### 2. USD Fundamentals for Robotics
+- Understanding USD format and its advantages for robotics
+- USD prim types and hierarchy for robot models
+- Converting concepts from URDF to USD
+
+### 3. Humanoid Robot in USD
+- Creating USD representations of humanoid robots
+- Joint and articulation setup in USD
+- Physics properties and collision shapes
+
+### 4. Environment and Scene Setup
+- Creating realistic environments for humanoid robots
+- Lighting and material configuration
+- Scene composition and organization
+
+### 5. ROS 2 Integration
+- Setting up Isaac ROS bridge for communication
+- Publishing sensor data to ROS 2 topics
+- Receiving control commands from ROS 2
+
+## Hands-On Lab
+
+### Setting up Isaac Sim for Humanoid Robotics
+
+1. **Isaac Sim Installation:**
+   - Download and install NVIDIA Isaac Sim from the Omniverse Launcher
+   - Ensure your system meets the minimum requirements (GPU with RTX capabilities recommended)
+   - Launch Isaac Sim and verify the installation
+
+2. **Project Structure:**
+   Create the Isaac Sim project structure in `isaac_sim_assets/`:
+   ```
+   isaac_sim_assets/
+   ├── isaac_sim_project/
+   │   ├── assets/
+   │   │   └── robots/
+   │   │       └── humanoid/
+   │   ├── scenes/
+   │   ├── usd/
+   │   │   └── humanoid_robot/
+   │   ├── scripts/
+   │   └── configs/
+   ```
+
+3. **USD Robot Creation:**
+   Isaac Sim uses USD (Universal Scene Description) format for 3D scenes. Create a simple humanoid robot in USD format: `isaac_sim_assets/usd/humanoid_robot/humanoid.usda`
+
+   ```usda
+   #usda 1.0
+   (
+       doc = "Simple Humanoid Robot in USD format for Isaac Sim"
+       metersPerUnit = 1.0
+   )
+
+   def Xform "humanoid_robot"
+   {
+       def Xform "base_link"
+       {
+           add references = @./parts/base_link.usda@
+
+           def Xform "torso"
+           {
+               add references = @./parts/torso.usda@
+               add xformOp:translate = (0, 0.5, 0)
+           }
+
+           def Xform "head"
+           {
+               add references = @./parts/head.usda@
+               add xformOp:translate = (0, 0.9, 0)
+           }
+
+           def Xform "left_arm"
+           {
+               add references = @./parts/arm.usda@
+               add xformOp:translate = (-0.4, 0.3, 0)
+               add xformOp:rotateY = 45
+           }
+
+           def Xform "right_arm"
+           {
+               add references = @./parts/arm.usda@
+               add xformOp:translate = (0.4, 0.3, 0)
+               add xformOp:rotateY = -45
+           }
+
+           def Xform "left_leg"
+           {
+               add references = @./parts/leg.usda@
+               add xformOp:translate = (-0.15, -0.5, 0)
+           }
+
+           def Xform "right_leg"
+           {
+               add references = @./parts/leg.usda@
+               add xformOp:translate = (0.15, -0.5, 0)
+           }
+
+           def Xform "camera_link"
+           {
+               add references = @./parts/camera.usda@
+               add xformOp:translate = (0, 0.7, 0.15)
+           }
+       }
+   }
+   ```
+
+4. **Individual Robot Parts:**
+   Create individual USD files for each robot part. For example, `isaac_sim_assets/usd/humanoid_robot/parts/base_link.usda`:
+
+   ```usda
+   #usda 1.0
+   (
+       doc = "Base link of the humanoid robot"
+   )
+
+   def "base_link"
+   {
+       def Capsule "collision"
+       {
+           add xformOp:scale = (0.3, 0.3, 0.3)
+           add xformOp:translate = (0, 0, 0)
+           prepend apiSchemas = ["PhysicsRigidBodyAPI"]
+       }
+
+       def Capsule "visual"
+       {
+           add xformOp:scale = (0.3, 0.3, 0.3)
+           add xformOp:translate = (0, 0, 0)
+           prepend apiSchemas = ["MaterialBindingAPI"]
+       }
+   }
+   ```
+
+5. **Physics Configuration:**
+   Create a physics configuration file: `isaac_sim_assets/configs/physics_config.usda`
+
+   ```usda
+   #usda 1.0
+   (
+       doc = "Physics configuration for humanoid robot in Isaac Sim"
+   )
+
+   def PhysicsScene "physicsScene"
+   {
+       add xformOp:translate = (0, 0, 0)
+       float3 gravity = (0, 0, -9.81)
+       float timeStepsPerSecond = 60
+       float maxSubSteps = 1
+   }
+
+   def PhysicsMaterial "robotMaterial"
+   {
+       float dynamicFriction = 0.5
+       float staticFriction = 0.5
+       float restitution = 0.3
+   }
+   ```
+
+6. **Isaac Sim Script for Robot Setup:**
+   Create a Python script to automate robot setup in Isaac Sim: `isaac_sim_assets/scripts/setup_humanoid_robot.py`
+
+   ```python
+   """
+   Isaac Sim Script for Humanoid Robot Setup
+
+   This script demonstrates how to programmatically create and configure
+   a humanoid robot in Isaac Sim using the Omniverse Kit API.
+   """
+
+   import omni
+   import omni.ext
+   import omni.usd
+   import omni.kit.commands
+   from pxr import Usd, UsdGeom, Gf, Sdf, UsdPhysics, PhysxSchema
+   import carb
+
+
+   def create_humanoid_robot_stage():
+       """
+       Create a new USD stage with a humanoid robot setup
+       """
+       # Create a new stage
+       stage = omni.usd.get_context().get_stage()
+
+       # Set up the root prim
+       root_path = Sdf.Path("/World")
+       if not stage.GetPrimAtPath(root_path):
+           UsdGeom.Xform.Define(stage, root_path)
+
+       # Create robot root
+       robot_path = Sdf.Path("/World/humanoid_robot")
+       robot_prim = UsdGeom.Xform.Define(stage, robot_path)
+
+       # Create base link
+       base_path = Sdf.Path("/World/humanoid_robot/base_link")
+       base_prim = UsdGeom.Capsule.Define(stage, base_path)
+       base_prim.CreateRadiusAttr(0.3)
+       base_prim.CreateHeightAttr(0.6)
+
+       # Create torso
+       torso_path = Sdf.Path("/World/humanoid_robot/torso")
+       torso_prim = UsdGeom.Cylinder.Define(stage, torso_path)
+       torso_prim.GetPrim().SetMetadata("xformOp:translate", Gf.Vec3f(0, 0.5, 0))
+       torso_prim.CreateRadiusAttr(0.25)
+       torso_prim.CreateHeightAttr(0.5)
+
+       # Create head
+       head_path = Sdf.Path("/World/humanoid_robot/head")
+       head_prim = UsdGeom.Sphere.Define(stage, head_path)
+       head_prim.GetPrim().SetMetadata("xformOp:translate", Gf.Vec3f(0, 0.9, 0))
+       head_prim.CreateRadiusAttr(0.15)
+
+       # Create left arm
+       left_arm_path = Sdf.Path("/World/humanoid_robot/left_arm")
+       left_arm_prim = UsdGeom.Cylinder.Define(stage, left_arm_path)
+       left_arm_prim.GetPrim().SetMetadata("xformOp:translate", Gf.Vec3f(-0.4, 0.3, 0))
+       left_arm_prim.GetPrim().SetMetadata("xformOp:rotateY", 45)
+       left_arm_prim.CreateRadiusAttr(0.075)
+       left_arm_prim.CreateHeightAttr(0.4)
+
+       # Create right arm
+       right_arm_path = Sdf.Path("/World/humanoid_robot/right_arm")
+       right_arm_prim = UsdGeom.Cylinder.Define(stage, right_arm_path)
+       right_arm_prim.GetPrim().SetMetadata("xformOp:translate", Gf.Vec3f(0.4, 0.3, 0))
+       right_arm_prim.GetPrim().SetMetadata("xformOp:rotateY", -45)
+       right_arm_prim.CreateRadiusAttr(0.075)
+       right_arm_prim.CreateHeightAttr(0.4)
+
+       # Create left leg
+       left_leg_path = Sdf.Path("/World/humanoid_robot/left_leg")
+       left_leg_prim = UsdGeom.Cylinder.Define(stage, left_leg_path)
+       left_leg_prim.GetPrim().SetMetadata("xformOp:translate", Gf.Vec3f(-0.15, -0.5, 0))
+       left_leg_prim.CreateRadiusAttr(0.075)
+       left_leg_prim.CreateHeightAttr(0.5)
+
+       # Create right leg
+       right_leg_path = Sdf.Path("/World/humanoid_robot/right_leg")
+       right_leg_prim = UsdGeom.Cylinder.Define(stage, right_leg_path)
+       right_leg_prim.GetPrim().SetMetadata("xformOp:translate", Gf.Vec3f(0.15, -0.5, 0))
+       right_leg_prim.CreateRadiusAttr(0.075)
+       right_leg_prim.CreateHeightAttr(0.5)
+
+       # Apply basic materials
+       apply_basic_materials(stage)
+
+       # Apply physics properties
+       apply_physics_properties(stage)
+
+       carb.log_info("Humanoid robot created successfully")
+
+
+   def apply_basic_materials(stage):
+       """
+       Apply basic materials to the robot parts
+       """
+       # Create a simple material
+       material_path = Sdf.Path("/World/Looks/RobotMaterial")
+       material = UsdShade.Material.Define(stage, material_path)
+
+       # Create a preview surface shader
+       shader_path = Sdf.Path("/World/Looks/RobotMaterial/PreviewSurface")
+       shader = UsdShade.Shader.Define(stage, shader_path)
+       shader.CreateIdAttr("UsdPreviewSurface")
+
+       # Set material properties
+       shader.CreateInput("diffuseColor", Sdf.ValueTypeNames.Color3f).Set((0.8, 0.8, 0.8))
+       shader.CreateInput("metallic", Sdf.ValueTypeNames.Float).Set(0.1)
+       shader.CreateInput("roughness", Sdf.ValueTypeNames.Float).Set(0.4)
+
+       # Connect the shader to the material
+       material.CreateSurfaceOutput().ConnectToSource(shader.ConnectableAPI(), "surface")
+
+       # Bind the material to all robot parts
+       robot_parts = [
+           "/World/humanoid_robot/base_link",
+           "/World/humanoid_robot/torso",
+           "/World/humanoid_robot/head",
+           "/World/humanoid_robot/left_arm",
+           "/World/humanoid_robot/right_arm",
+           "/World/humanoid_robot/left_leg",
+           "/World/humanoid_robot/right_leg"
+       ]
+
+       for part_path in robot_parts:
+           part_prim = stage.GetPrimAtPath(part_path)
+           if part_prim:
+               UsdShade.MaterialBindingAPI(part_prim).Bind(material)
+
+
+   def apply_physics_properties(stage):
+       """
+       Apply basic physics properties to the robot
+       """
+       # Create physics scene
+       scene_path = Sdf.Path("/World/physicsScene")
+       scene = UsdPhysics.Scene.Define(stage, scene_path)
+
+       # Set gravity
+       scene.CreateGravityDirectionAttr().Set(Gf.Vec3f(0.0, 0.0, -1.0))
+       scene.CreateGravityMagnitudeAttr().Set(9.81)
+
+       # Apply rigid body properties to each part
+       robot_parts = [
+           "/World/humanoid_robot/base_link",
+           "/World/humanoid_robot/torso",
+           "/World/humanoid_robot/head",
+           "/World/humanoid_robot/left_arm",
+           "/World/humanoid_robot/right_arm",
+           "/World/humanoid_robot/left_leg",
+           "/World/humanoid_robot/right_leg"
+       ]
+
+       for part_path in robot_parts:
+           part_prim = stage.GetPrimAtPath(part_path)
+           if part_prim:
+               # Apply rigid body API
+               UsdPhysics.RigidBodyAPI.Apply(part_prim)
+
+               # Set mass properties
+               phys_body = UsdPhysics.RigidBodyAPI(part_prim)
+               phys_body.CreateMassAttr(1.0)
+               phys_body.CreateLinearVelocityAttr(Gf.Vec3f(0, 0, 0))
+               phys_body.CreateAngularVelocityAttr(Gf.Vec3f(0, 0, 0))
+
+
+   def setup_environment():
+       """
+       Set up the basic environment for the robot
+       """
+       stage = omni.usd.get_context().get_stage()
+
+       # Create ground plane
+       ground_path = Sdf.Path("/World/ground")
+       ground = UsdGeom.Mesh.Define(stage, ground_path)
+       ground.CreatePointsAttr([(0, 0, 0), (10, 0, 0), (10, 10, 0), (0, 10, 0)])
+       ground.CreateFaceVertexIndicesAttr([0, 1, 2, 0, 2, 3])
+       ground.CreateFaceVertexCountsAttr([3, 3])
+
+       # Apply physics to ground
+       UsdPhysics.CollisionAPI.Apply(ground.GetPrim())
+
+       carb.log_info("Environment setup completed")
+
+
+   # Main execution
+   if __name__ == "__main__":
+       create_humanoid_robot_stage()
+       setup_environment()
+   ```
+
+7. **Isaac Sim Scene File:**
+   Create a basic Isaac Sim scene: `isaac_sim_assets/isaac_sim_project/scenes/basic_humanoid.usd`
+
+   ```usda
+   #usda 1.0
+   (
+       doc = "Basic humanoid robot scene for Isaac Sim"
+       metersPerUnit = 1.0
+       upAxis = "Y"
+   )
+
+   def Xform "World"
+   {
+       def PhysicsScene "physicsScene"
+       {
+           float3 gravity = (0, 0, -981)
+           float timeStepsPerSecond = 60
+           float maxSubSteps = 1
+       }
+
+       def Xform "ground_plane"
+       {
+           add references = @./assets/ground_plane.usda@
+           add xformOp:translate = (0, 0, 0)
+       }
+
+       def Xform "humanoid_robot"
+       {
+           add references = @../usd/humanoid_robot/humanoid.usda@
+           add xformOp:translate = (0, 0, 1.0)
+       }
+
+       def Xform "distantLight"
+       {
+           add xformOp:rotateXYZ = (0, 45, 0)
+           add references = @./assets/distant_light.usda@
+       }
+
+       def Xform "domeLight"
+       {
+           add references = @./assets/dome_light.usda@
+       }
+   }
+   ```
+
+8. **Testing the Setup:**
+   - Launch Isaac Sim
+   - Open the created USD scene file
+   - Verify that the humanoid robot appears correctly
+   - Check that physics simulation works properly
+   - Test basic movement and interaction
+
+## Safety Notes
+- Ensure Isaac Sim is properly licensed and configured before use
+- Verify system requirements (especially GPU capabilities) for optimal performance
+- Implement safety checks in simulation to prevent unrealistic robot behaviors
+- Test collision detection and response thoroughly
+- Validate that simulated physics match real-world expectations for the robot
+
+## Evaluation Criteria
+- Can Isaac Sim load and display the humanoid robot model correctly?
+- Are physics properties properly configured for realistic simulation?
+- Can the robot be moved and controlled in the simulation environment?
+- Is the USD scene properly structured and organized?
+- Can the simulation run at acceptable frame rates?
+- Is the robot model compatible with ROS 2 integration requirements?

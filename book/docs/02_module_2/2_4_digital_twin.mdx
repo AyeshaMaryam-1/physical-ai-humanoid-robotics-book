@@ -1,0 +1,450 @@
+---
+sidebar_position: 4
+title: "Complete Digital Twin Pipeline"
+---
+
+# Complete Digital Twin Pipeline
+
+## Purpose
+This chapter integrates all components of our digital twin system, connecting URDF robot description, ROS 2 control, Gazebo simulation, and Unity visualization into a unified pipeline. We'll create a comprehensive launch system that synchronizes all components, enabling real-time control and visualization across multiple platforms.
+
+## Learning Outcomes
+After completing this chapter, you will be able to:
+- Create a unified launch system for Gazebo, ROS 2, and Unity
+- Synchronize robot states across simulation and visualization platforms
+- Implement real-time control and feedback loops in the digital twin
+- Debug and monitor the complete digital twin pipeline
+- Optimize performance across the integrated system
+
+## Prerequisites
+- Completed Module 1 (ROS 2 fundamentals and humanoid URDF)
+- Completed Module 2.1-2.3 (Gazebo simulation, sensors, and Unity visualization)
+- Understanding of ros2_control and sensor integration
+- Basic knowledge of Unity-ROS communication
+
+## Inputs
+- Completed humanoid robot URDF with sensors and ros2_control
+- Working Gazebo simulation with sensor data
+- Unity project with ROS integration
+- Understanding of launch file creation in ROS 2
+
+## Outputs
+- Unified launch file for complete digital twin system
+- Synchronized control and visualization pipeline
+- Performance optimization strategies
+- Monitoring and debugging tools for the digital twin
+
+## Key Concepts
+- **Digital Twin Architecture**: Integration of multiple simulation and visualization platforms
+- **Unified Launch System**: Single launch file to start all components
+- **State Synchronization**: Keeping robot states consistent across platforms
+- **Performance Optimization**: Ensuring smooth operation of integrated system
+- **Real-time Communication**: Maintaining low-latency communication between components
+- **Monitoring and Debugging**: Tools to observe and troubleshoot the digital twin
+- **System Integration**: Connecting all components into a cohesive pipeline
+
+## Chapter Outline
+This chapter creates a complete digital twin pipeline:
+
+### 1. Unified Launch System
+- Creating a comprehensive launch file for all components
+- Managing dependencies between Gazebo, ROS 2, and Unity
+- Configuring communication protocols and parameters
+
+### 2. State Synchronization
+- Ensuring consistent robot states across platforms
+- Handling joint state propagation and timing
+- Managing sensor data distribution
+
+### 3. Control Pipeline
+- Implementing unified control interfaces
+- Managing feedback loops and safety limits
+- Coordinating command distribution
+
+### 4. Performance Optimization
+- Optimizing communication bandwidth
+- Managing update rates and timing
+- Ensuring smooth visualization performance
+
+## Hands-On Lab
+
+### Creating the Complete Digital Twin Pipeline
+
+1. **Unified Launch File:**
+   Create a comprehensive launch file that starts all components of our digital twin: `robotics_ws/src/humanoid_description/launch/full_digital_twin.launch.py`
+
+```python
+from launch import LaunchDescription
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, RegisterEventHandler
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
+from launch_ros.actions import Node
+from launch_ros.substitutions import FindPackageShare
+from ament_index_python.packages import get_package_share_directory
+from launch.event_handlers import OnProcessExit
+from launch.actions import ExecuteProcess
+import os
+
+def generate_launch_description():
+    # Get the package share directory
+    pkg_share = get_package_share_directory('humanoid_description')
+    default_model_path = os.path.join(pkg_share, 'urdf/simple_humanoid.urdf')
+    default_world_path = os.path.join(pkg_share, 'worlds/empty_world.world')
+
+    # Declare launch arguments
+    model_arg = DeclareLaunchArgument(
+        name='model',
+        default_value=default_model_path,
+        description='Absolute path to robot urdf file'
+    )
+
+    world_arg = DeclareLaunchArgument(
+        name='world',
+        default_value=default_world_path,
+        description='Absolute path to world file'
+    )
+
+    # Start Gazebo server and client
+    gazebo = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource([
+            PathJoinSubstitution([
+                FindPackageShare('gazebo_ros'),
+                'launch',
+                'gazebo.launch.py'
+            ])
+        ]),
+        launch_arguments={
+            'world': LaunchConfiguration('world'),
+            'verbose': 'false',
+        }.items()
+    )
+
+    # Robot State Publisher node
+    robot_state_publisher_node = Node(
+        package='robot_state_publisher',
+        executable='robot_state_publisher',
+        parameters=[{
+            'robot_description': open(default_model_path).read()
+        }]
+    )
+
+    # Spawn the robot in Gazebo
+    spawn_entity_node = Node(
+        package='gazebo_ros',
+        executable='spawn_entity.py',
+        arguments=[
+            '-file', LaunchConfiguration('model'),
+            '-entity', 'simple_humanoid',
+            '-x', '0.0',
+            '-y', '0.0',
+            '-z', '1.0'
+        ],
+        output='screen'
+    )
+
+    # ros2_control using FakeSystem as hardware interface
+    ros2_controllers_path = os.path.join(
+        get_package_share_directory('humanoid_description'),
+        'config',
+        'simple_humanoid_controllers.yaml'
+    )
+
+    robot_controllers = Node(
+        package='controller_manager',
+        executable='ros2_control_node',
+        parameters=[robot_controllers_path],
+        output='both',
+    )
+
+    # Joint State Broadcaster
+    joint_state_broadcaster_spawner = Node(
+        package='controller_manager',
+        executable='spawner',
+        arguments=['joint_state_broadcaster', '--controller-manager', '/controller_manager'],
+    )
+
+    # Robot specific controllers
+    robot_controller_spawner = Node(
+        package='controller_manager',
+        executable='spawner',
+        arguments=['forward_position_controller', '--controller-manager', '/controller_manager'],
+    )
+
+    # Sensor Processor node
+    sensor_processor_node = Node(
+        package='ai_control_agent',
+        executable='sensor_processor',
+        name='sensor_processor',
+        output='screen'
+    )
+
+    # RViz2 node
+    rviz_node = Node(
+        package='rviz2',
+        executable='rviz2',
+        name='rviz2',
+        output='screen'
+    )
+
+    # Unity ROS TCP Endpoint (for Unity communication)
+    unity_ros_tcp_endpoint = Node(
+        package='ros_tcp_endpoint',
+        executable='default_server_endpoint',
+        name='unity_ros_tcp_endpoint',
+        parameters=[
+            {'tcp_port': 10000},
+            {'namespace': ''},
+            {'buffer_size': 65536},
+            {'RosUnityTcpAddress': '0.0.0.0'}  # Listen on all interfaces
+        ],
+        output='screen'
+    )
+
+    # Event handler to start controllers after ros2_control_node
+    delay_rviz_after_spawner = RegisterEventHandler(
+        event_handler=OnProcessExit(
+            target_action=joint_state_broadcaster_spawner,
+            on_exit=[rviz_node],
+        )
+    )
+
+    delay_unity_endpoint_after_spawner = RegisterEventHandler(
+        event_handler=OnProcessExit(
+            target_action=joint_state_broadcaster_spawner,
+            on_exit=[unity_ros_tcp_endpoint],
+        )
+    )
+
+    return LaunchDescription([
+        model_arg,
+        world_arg,
+        gazebo,
+        robot_state_publisher_node,
+        spawn_entity_node,
+        robot_controllers,
+        joint_state_broadcaster_spawner,
+        robot_controller_spawner,
+        sensor_processor_node,
+        delay_rviz_after_spawner,
+        delay_unity_endpoint_after_spawner
+    ])
+```
+
+2. **Controller Configuration:**
+   Create the controller configuration file: `robotics_ws/src/humanoid_description/config/simple_humanoid_controllers.yaml`
+
+```yaml
+controller_manager:
+  ros__parameters:
+    update_rate: 100  # Hz
+
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+
+    forward_position_controller:
+      type: position_controllers/JointGroupPositionController
+
+forward_position_controller:
+  ros__parameters:
+    joints:
+      - left_hip_joint
+      - left_knee_joint
+      - left_shoulder_joint
+      - left_elbow_joint
+      - right_hip_joint
+      - right_knee_joint
+      - right_shoulder_joint
+      - right_elbow_joint
+
+# Add more controllers as needed for your specific robot
+```
+
+3. **Digital Twin Test Script:**
+   Create a test script to verify the complete digital twin pipeline: `robotics_ws/src/ai_control_agent/ai_control_agent/digital_twin_test.py`
+
+```python
+#!/usr/bin/env python3
+
+"""
+Digital Twin Test Script
+
+This script tests the complete digital twin pipeline by:
+1. Publishing joint commands to control the robot
+2. Monitoring sensor data from the simulated robot
+3. Verifying synchronization between Gazebo and Unity
+"""
+
+import rclpy
+from rclpy.node import Node
+from std_msgs.msg import Float64MultiArray
+from sensor_msgs.msg import JointState, LaserScan, Image, Imu
+from builtin_interfaces.msg import Duration
+from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
+from control_msgs.msg import JointTrajectoryControllerState
+import time
+import math
+
+
+class DigitalTwinTester(Node):
+    def __init__(self):
+        super().__init__('digital_twin_tester')
+
+        # Joint command publisher
+        self.joint_cmd_publisher = self.create_publisher(
+            JointTrajectory,
+            '/forward_position_controller/joint_trajectory',
+            10
+        )
+
+        # Sensor data subscribers
+        self.joint_state_sub = self.create_subscription(
+            JointState,
+            '/joint_states',
+            self.joint_state_callback,
+            10
+        )
+
+        self.lidar_sub = self.create_subscription(
+            LaserScan,
+            '/lidar/scan',
+            self.lidar_callback,
+            10
+        )
+
+        self.camera_sub = self.create_subscription(
+            Image,
+            '/camera/image_raw',
+            self.camera_callback,
+            10
+        )
+
+        self.imu_sub = self.create_subscription(
+            Imu,
+            '/imu/data',
+            self.imu_callback,
+            10
+        )
+
+        # Timer for sending commands
+        self.timer = self.create_timer(1.0, self.send_test_command)
+
+        self.joint_names = [
+            'left_hip_joint', 'left_knee_joint', 'left_shoulder_joint', 'left_elbow_joint',
+            'right_hip_joint', 'right_knee_joint', 'right_shoulder_joint', 'right_elbow_joint'
+        ]
+
+        self.get_logger().info("Digital Twin Tester initialized")
+
+    def send_test_command(self):
+        """Send a test joint trajectory command"""
+        msg = JointTrajectory()
+        msg.joint_names = self.joint_names
+
+        point = JointTrajectoryPoint()
+
+        # Create a simple oscillating motion
+        t = self.get_clock().now().nanoseconds / 1e9
+        amplitude = 0.5
+        frequency = 0.5
+
+        positions = []
+        for i, joint_name in enumerate(self.joint_names):
+            pos = amplitude * math.sin(2 * math.pi * frequency * t + i * math.pi / 4)
+            positions.append(pos)
+
+        point.positions = positions
+        point.time_from_start = Duration(sec=1, nanosec=0)
+
+        msg.points = [point]
+
+        self.joint_cmd_publisher.publish(msg)
+        self.get_logger().info(f"Sent joint command: {positions}")
+
+    def joint_state_callback(self, msg):
+        """Handle joint state updates"""
+        self.get_logger().debug(f"Received joint states: {len(msg.name)} joints")
+
+    def lidar_callback(self, msg):
+        """Handle LiDAR data"""
+        self.get_logger().debug(f"Received LiDAR data: {len(msg.ranges)} ranges")
+
+    def camera_callback(self, msg):
+        """Handle camera data"""
+        self.get_logger().debug(f"Received camera data: {msg.width}x{msg.height}")
+
+    def imu_callback(self, msg):
+        """Handle IMU data"""
+        self.get_logger().debug(f"Received IMU data: linear={msg.linear_acceleration}, angular={msg.angular_velocity}")
+
+
+def main(args=None):
+    rclpy.init(args=args)
+
+    tester = DigitalTwinTester()
+
+    try:
+        rclpy.spin(tester)
+    except KeyboardInterrupt:
+        tester.get_logger().info("Shutting down Digital Twin Tester")
+    finally:
+        tester.destroy_node()
+        rclpy.shutdown()
+
+
+if __name__ == '__main__':
+    main()
+```
+
+4. **Launch and Test the Complete Digital Twin:**
+   - Launch the complete digital twin system:
+   ```bash
+   cd robotics_ws
+   source install/setup.bash
+   ros2 launch humanoid_description full_digital_twin.launch.py
+   ```
+
+   - In a separate terminal, start the Unity application with ROS integration
+   - In another terminal, run the test script:
+   ```bash
+   ros2 run ai_control_agent digital_twin_test
+   ```
+
+5. **Verification Steps:**
+   - Verify that joint commands sent from ROS 2 affect both the Gazebo simulation and Unity visualization
+   - Check that sensor data is being published and received correctly
+   - Confirm that Unity is receiving joint states and updating the visualization in real-time
+   - Monitor the synchronization between platforms
+
+6. **Performance Monitoring:**
+   - Use ROS 2 tools to monitor communication performance:
+   ```bash
+   # Monitor topics
+   ros2 topic hz /joint_states
+   ros2 topic hz /forward_position_controller/joint_trajectory
+
+   # Check system performance
+   ros2 run plotjuggler plotjuggler
+   ```
+
+7. **Troubleshooting:**
+   - If Unity doesn't connect to ROS, verify the rosbridge server is running:
+   ```bash
+   ros2 launch rosbridge_server rosbridge_websocket_launch.xml
+   ```
+   - Check network connectivity between ROS 2 and Unity
+   - Verify that all required packages are installed and built
+
+## Safety Notes
+- Ensure proper error handling in the launch system for component failures
+- Implement safety limits for joint positions and velocities across all platforms
+- Monitor system performance to prevent instability in real-time operation
+- Include emergency stop capabilities across the entire digital twin system
+- Validate that safety protocols are consistent across simulation and visualization
+
+## Evaluation Criteria
+- Does the unified launch file start all components correctly?
+- Are robot states synchronized across Gazebo and Unity?
+- Can commands be sent to control the robot in both simulation and visualization?
+- Are sensor data streams properly distributed to all subscribers?
+- Does the system maintain stable performance during operation?
+- Can the digital twin pipeline be reliably launched and shut down?
