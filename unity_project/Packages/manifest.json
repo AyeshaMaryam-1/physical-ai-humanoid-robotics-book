@@ -1,6 +1,0 @@
-{
-  "Dependencies": {
-    "com.unity.rosbridge": "https://github.com/Unity-Technologies/ROS-TCP-Connector.git?path=/com.unity.rosbridge#main",
-    "com.unity.robotics.ros-tcp-connector": "https://github.com/Unity-Technologies/ROS-TCP-Connector.git#main"
-  }
-}

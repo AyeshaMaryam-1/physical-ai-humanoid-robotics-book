@@ -1,30 +1,393 @@
 /**
- * Any CSS included here will be global. The classic template
- * bundles Infima by default. Infima is a CSS framework designed to
- * work well for content-centric websites.
+ * Academic textbook companion site CSS
  */
 
 /* You can override the default Infima variables here. */
 :root {
-  --ifm-color-primary: #2e8555;
-  --ifm-color-primary-dark: #29784c;
-  --ifm-color-primary-darker: #277148;
-  --ifm-color-primary-darkest: #205d3b;
-  --ifm-color-primary-light: #33925d;
-  --ifm-color-primary-lighter: #359962;
-  --ifm-color-primary-lightest: #3cad6e;
+  --ifm-color-primary: #1d4e89;
+  --ifm-color-primary-dark: #194477;
+  --ifm-color-primary-darker: #173d6e;
+  --ifm-color-primary-darkest: #123158;
+  --ifm-color-primary-light: #245ea9;
+  --ifm-color-primary-lighter: #2865b3;
+  --ifm-color-primary-lightest: #3578cc;
+  --ifm-color-content: #242526;
+  --ifm-color-content-inverse: #ffffff;
+  --ifm-color-gray-100: #f8fafc;
+  --ifm-color-gray-200: #e2e8f0;
+  --ifm-color-gray-900: #0f172a;
   --ifm-code-font-size: 95%;
   --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+  --ifm-font-family-base: 'Georgia', 'Times New Roman', serif;
+  --ifm-font-family-monospace: 'Courier New', monospace;
 }
 
-/* For readability concerns, you should choose a lighter palette in dark mode. */
-[data-theme='dark'] {
-  --ifm-color-primary: #25c2a0;
-  --ifm-color-primary-dark: #21af90;
-  --ifm-color-primary-darker: #1fa588;
-  --ifm-color-primary-darkest: #1a8870;
-  --ifm-color-primary-light: #29d5b0;
-  --ifm-color-primary-lighter: #32d8b4;
-  --ifm-color-primary-lightest: #4fddbf;
+/* LIGHT MODE (and SYSTEM MODE when OS is light): */
+/* Header background: #0A0930, Header text: white */
+/* Footer background: #0A0930, Footer text: white */
+/* Main content background: white, Main content text: #0A0930 */
+[data-theme='light'] {
+  --ifm-color-primary: #4f95da;
+  --ifm-color-primary-dark: #3a82cc;
+  --ifm-color-primary-darker: #3375b5;
+  --ifm-color-primary-darkest: #2a6096;
+  --ifm-color-primary-light: #66a6e0;
+  --ifm-color-primary-lighter: #7bb7e5;
+  --ifm-color-primary-lightest: #93c9ec;
+  --ifm-color-content: #e2e8f0;
+  --ifm-color-content-inverse: #1e293b;
   --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+  --ifm-heading-color: #0A0930;
+  --ifm-hero-text-color: #0A0930;
+}
+
+/* DARK MODE (and SYSTEM MODE when OS is dark): */
+/* Header background: white, Header text: #0A0930 */
+/* Footer background: white, Footer text: #0A0930 */
+/* Main content background: #0A0930, Main content text: white */
+[data-theme='dark'] {
+  --ifm-color-primary: #4f95da;
+  --ifm-color-primary-dark: #3a82cc;
+  --ifm-color-primary-darker: #3375b5;
+  --ifm-color-primary-darkest: #2a6096;
+  --ifm-color-primary-light: #66a6e0;
+  --ifm-color-primary-lighter: #7bb7e5;
+  --ifm-color-primary-lightest: #93c9ec;
+  --ifm-color-content: #e2e8f0;
+  --ifm-color-content-inverse: #1e293b;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+  --ifm-heading-color: #ffffff;
+  --ifm-hero-text-color: #ffffff;
+}
+
+/* Academic styling for content */
+.docusaurus-highlight-code-line {
+  background-color: rgba(0, 0, 0, 0.1);
+  display: block;
+  margin: 0 calc(-1 * var(--ifm-pre-padding));
+  padding: 0 var(--ifm-pre-padding);
+}
+
+/* Enhanced hero section styling */
+.hero--primary {
+  background-color: #0A0930;
+  color: white;
+}
+
+.hero__title {
+  font-size: 3rem;
+  font-weight: bold;
+  margin-bottom: 1rem;
+}
+
+[data-theme='dark'] .hero__title {
+  color: white;
+}
+
+[data-theme='light'] .hero__title {
+  color: #0A0930;
+}
+
+.hero__subtitle {
+  font-size: 1.5rem;
+  margin-bottom: 2rem;
+  opacity: 0.9;
+}
+
+/* Theme-specific styling for header, footer, and main content */
+/* LIGHT MODE: Header background: #0A0930, Header text: white */
+[data-theme='light'] .navbar {
+  background-color: #0A0930 !important;
+  color: white !important;
+}
+
+[data-theme='light'] .navbar__title,
+[data-theme='light'] .navbar__link,
+[data-theme='light'] .navbar__item {
+  color: white !important;
+}
+
+/* LIGHT MODE: Theme selector icon color to white for contrast against #0A0930 */
+[data-theme='light'] .navbar .clean-btn {
+  color: white !important;
+}
+
+[data-theme='light'] .navbar .clean-btn:hover {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+/* LIGHT MODE: Main content background: white, Main content text: #0A0930 */
+[data-theme='light'] main {
+  background-color: white !important;
+  color: #0A0930 !important;
+}
+
+[data-theme='light'] .markdown {
+  color: #0A0930 !important;
+  background-color: white !important;
+}
+
+/* FOOTER STYLING - LIGHT MODE */
+/* Footer background color: #0A0930, Footer text color: white, Footer links color: white */
+[data-theme='light'] .footer {
+  background-color: #0A0930 !important;
+}
+
+[data-theme='light'] .footer__title,
+[data-theme='light'] .footer__link,
+[data-theme='light'] .footer__item,
+[data-theme='light'] .footer__copyright,
+[data-theme='light'] .footer__col {
+  color: white !important;
+}
+
+[data-theme='light'] .footer__link:hover {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+/* FOOTER STYLING - DARK MODE */
+/* Footer background color: white, Footer text color: #0A0930, Footer links color: #0A0930 */
+[data-theme='dark'] .footer {
+  background-color: white !important;
+}
+
+[data-theme='dark'] .footer__title,
+[data-theme='dark'] .footer__item,
+[data-theme='dark'] .footer__copyright,
+[data-theme='dark'] .footer__col {
+  color: #0A0930 !important;
+}
+
+/* DARK MODE: All footer links use #0A0930 as default color */
+[data-theme='dark'] .footer a {
+  color: #0A0930 !important;
+  transition: color 0.2s ease;
+}
+
+/* DARK MODE: Footer links transition to darker blue on hover */
+[data-theme='dark'] .footer a:hover,
+[data-theme='dark'] .footer a:focus {
+  color: #1A1A40 !important;
+}
+
+/* Ensure all primary body text is #0A0930 in light mode */
+[data-theme='light'] body,
+[data-theme='light'] .container,
+[data-theme='light'] .main-wrapper,
+[data-theme='light'] .theme-doc-markdown {
+  color: #0A0930 !important;
+}
+
+/* Ensure text elements are properly contrasted in light mode */
+[data-theme='light'] p,
+[data-theme='light'] span,
+[data-theme='light'] div,
+[data-theme='light'] li {
+  color: #0A0930 !important;
+}
+
+/* DARK MODE: Header background: white, Header text: #0A0930 */
+[data-theme='dark'] .navbar {
+  background-color: white !important;
+  color: #0A0930 !important;
+}
+
+[data-theme='dark'] .navbar__title,
+[data-theme='dark'] .navbar__link,
+[data-theme='dark'] .navbar__item {
+  color: #0A0930 !important;
+}
+
+/* DARK MODE: Main content background: #0A0930, Main content text: white */
+[data-theme='dark'] main, 
+[data-theme='dark'] .menu {
+  background-color: #0A0930 !important;
+  color: white !important;
+}
+
+
+[data-theme='dark'] .markdown {
+  color: white !important;
+  background-color: #0A0930 !important;
+}
+
+/* Ensure proper contrast in both modes */
+[data-theme='light'] .markdown h1,
+[data-theme='light'] .markdown h2,
+[data-theme='light'] .markdown h3 {
+  color: #0A0930;
+}
+
+[data-theme='dark'] .markdown h1,
+[data-theme='dark'] .markdown h2,
+[data-theme='dark'] .markdown h3 {
+  color: white;
+}
+
+/* MOBILE SIDEBAR FIXES - LIGHT MODE (≤ 996px) */
+@media (max-width: 996px) {
+  [data-theme='light'] .navbar-sidebar,
+  [data-theme='light'] .menu,
+  [data-theme='light'] .menu__list,
+  [data-theme='light'] .menu__link {
+    color: #0A0930 !important;
+    background: white;
+  }
+
+  [data-theme='light'] .navbar-sidebar__brand,
+  [data-theme='light'] .navbar__title {
+    color: white !important;
+  }
+
+  [data-theme='light'] .navbar-sidebar .clean-btn,
+  [data-theme='light'] .navbar-sidebar .navbar__title,
+  [data-theme='light'] .navbar-sidebar .theme-toggle {
+    color: #0A0930 !important;
+  }
+
+
+  [data-theme='light'] .menu__link:hover,
+  [data-theme='light'] .menu__link--active {
+    color: #4f95da !important;
+  }
+}
+
+/* MOBILE SIDEBAR FIXES - DARK MODE (≤ 996px) */
+@media (max-width: 996px) {
+  [data-theme='dark'] .navbar-sidebar,
+  [data-theme='dark'] .menu,
+  [data-theme='dark'] .menu__list,
+  [data-theme='dark'] .menu__link {
+    color: white !important;
+  }
+
+  [data-theme='dark'] .navbar-sidebar__brand,
+  [data-theme='dark'] .navbar__title {
+    color: #0A0930 !important;
+  }
+
+  [data-theme='dark'] .navbar-sidebar .clean-btn,
+  [data-theme='dark'] .navbar-sidebar .navbar__title,
+  [data-theme='dark'] .navbar-sidebar .theme-toggle {
+    color: white !important;
+  }
+
+  [data-theme='dark'] .menu__link:hover,
+  [data-theme='dark'] .menu__link--active {
+    color: #4f95da !important;
+  }
+}
+
+/* Academic content styling - Enhanced contrast for both light and dark modes */
+.markdown h1 {
+  font-size: 2.5rem;
+  border-bottom: 2px solid var(--ifm-color-primary);
+  padding-bottom: 0.5rem;
+  color: var(--ifm-heading-color, #242526);
+}
+
+.markdown h2 {
+  font-size: 2rem;
+  color: var(--ifm-color-primary);
+}
+
+.markdown h3 {
+  font-size: 1.5rem;
+  color: var(--ifm-heading-color, #242526);
+}
+
+/* Ensure text contrast in both modes */
+.markdown p,
+.markdown li,
+.markdown td,
+.markdown th {
+  color: var(--ifm-font-color-base, #242526);
+}
+
+/* Dark mode specific overrides for better contrast */
+[data-theme='dark'] .markdown h1,
+[data-theme='dark'] .markdown h2,
+[data-theme='dark'] .markdown h3 {
+  color: #ffffff;
+}
+
+[data-theme='dark'] .markdown p,
+[data-theme='dark'] .markdown li {
+  color: #e2e8f0;
+}
+
+/* Button styling for academic look */
+[data-theme='dark'] .button--secondary,
+[data-theme='dark'] .button--primary {
+  background-color: white;
+  border-color: #0A0930;
+  color: #0A0930;
+}
+
+[data-theme='light'] .button--secondary,
+[data-theme='light'] .button--primary {
+  background-color: #0A0930;
+  border-color: white;
+  color: white;
+}
+
+.button--outline {
+  background-color: transparent;
+  border: 2px solid #1d4e89;
+  color: #1d4e89;
+}
+
+/* Footer styling */
+.footer--dark {
+  background-color: #1b3a7b;
+}
+
+/* Navigation styling */
+.navbar__title {
+  font-weight: bold;
+  font-size: 1.2rem;
+}
+
+/* Table styling for academic documents */
+.markdown table {
+  display: table;
+}
+
+.markdown table th,
+.markdown table td {
+  border: 1px solid var(--ifm-color-emphasis-300);
+  padding: 0.75rem;
+  color: var(--ifm-font-color-base);
+}
+
+.markdown table th {
+  background-color: var(--ifm-color-emphasis-100);
+  font-weight: bold;
+}
+
+/* Dark mode table styling */
+[data-theme='dark'] .markdown table th {
+  background-color: var(--ifm-color-emphasis-200);
+}
+
+/* Code block styling */
+.prism-code {
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+/* Sidebar styling */
+.menu {
+  font-size: 0.9rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 996px) {
+  .hero__title {
+    font-size: 2rem;
+  }
+
+  .hero__subtitle {
+    font-size: 1.2rem;
+  }
 }
