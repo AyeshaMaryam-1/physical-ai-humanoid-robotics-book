@@ -20,15 +20,16 @@ const config = {
   },
 
   // Set the production url of your site here
-  url: 'https://physical-ai-humanoid-robotics-book-five.vercel.app/', // Replace with your GitHub Pages URL
+  url: 'https://AyeshaMaryam-1.github.io', // Replace with your GitHub Pages URL
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
-  baseUrl: '/', // GitHub Pages subdirectory
+  baseUrl: '/physical-ai-humanoid-robotics-book/', // GitHub Pages subdirectory
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
   organizationName: 'AyeshaMaryam-1', // Usually your GitHub org/user name.
   projectName: 'physical-ai-humanoid-robotics-book', // Usually your repo name.
+  trailingSlash: false,
 
   onBrokenLinks: 'warn',
 
