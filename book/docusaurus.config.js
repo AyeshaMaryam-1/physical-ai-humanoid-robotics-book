@@ -20,7 +20,7 @@ const config = {
   },
 
   // Set the production url of your site here
-  url: 'https://ayeshaMaryam-1.github.io', // Replace with your GitHub Pages URL
+  url: 'https://physical-ai-humanoid-robotics-book-five.vercel.app/', // Replace with your GitHub Pages URL
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
   baseUrl: '/', // GitHub Pages subdirectory
