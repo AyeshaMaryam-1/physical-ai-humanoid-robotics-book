@@ -47,7 +47,7 @@ const config = {
       ({
         docs: {
           sidebarPath: './sidebars.js',
-          routeBasePath: '/',
+          routeBasePath: 'docs',
           editUrl:
             'https://github.com/AyeshaMaryam-1/physical-ai-humanoid-robotics-book/tree/main/book/',
         },
@@ -104,7 +104,7 @@ const config = {
           {
             type: 'docSidebar',
             sidebarId: 'tutorialSidebar',
-            href: '/module_4/4_4_capstone',
+            href: '/docs/module_4/4_4_capstone',
             position: 'left',
             label: 'Capstone',
           },
@@ -123,15 +123,15 @@ const config = {
             items: [
               {
                 label: 'Preface',
-                to: '/front_matter/preface',
+                to: '/docs/front_matter/preface',
               },
               {
                 label: "Reader's Guide",
-                to: '/front_matter/how_to_use',
+                to: '/docs/front_matter/how_to_use',
               },
               {
                 label: 'Setup Guides',
-                to: '/front_matter/lab_setup',
+                to: '/docs/front_matter/lab_setup',
               },
             ],
           },
