@@ -104,7 +104,7 @@ const config = {
           {
             type: 'docSidebar',
             sidebarId: 'tutorialSidebar',
-            href: '/docs/module_4/4_4_capstone',
+            href: '/module_4/4_4_capstone',
             position: 'left',
             label: 'Capstone',
           },
@@ -123,15 +123,15 @@ const config = {
             items: [
               {
                 label: 'Preface',
-                to: '/docs/front_matter/preface',
+                to: '/front_matter/preface',
               },
               {
                 label: "Reader's Guide",
-                to: '/docs/front_matter/how_to_use',
+                to: '/front_matter/how_to_use',
               },
               {
                 label: 'Setup Guides',
-                to: '/docs/front_matter/lab_setup',
+                to: '/front_matter/lab_setup',
               },
             ],
           },
